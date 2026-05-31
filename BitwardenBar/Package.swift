@@ -6,12 +6,22 @@ let package = Package(
     platforms: [
         .macOS(.v13)
     ],
+    products: [
+        .library(
+            name: "BitwardenBar",
+            targets: ["BitwardenBar"]
+        ),
+        .executable(
+            name: "BitwardenBarStandalone",
+            targets: ["BitwardenBarStandalone"]
+        )
+    ],
     dependencies: [
         // SQLite ORM for local vault cache
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "6.0.0"),
     ],
     targets: [
-        .executableTarget(
+        .target(
             name: "BitwardenBar",
             dependencies: [
                 .product(name: "GRDB", package: "GRDB.swift"),
@@ -23,6 +33,11 @@ let package = Package(
             resources: [
                 .process("Resources")
             ]
+        ),
+        .executableTarget(
+            name: "BitwardenBarStandalone",
+            dependencies: ["BitwardenBar"],
+            path: "Sources/BitwardenBarStandalone"
         ),
         .testTarget(
             name: "BitwardenBarTests",

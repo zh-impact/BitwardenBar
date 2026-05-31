@@ -38,9 +38,11 @@ struct LoginView: View {
 
             ScrollView {
                 VStack(spacing: 16) {
-                    if twoFactorState != nil {
+                    if let twoFactorState {
                         TwoFactorSection(
-                            state: $twoFactorState,
+                            state: twoFactorState,
+                            onChange: { self.twoFactorState = $0 },
+                            onCancel: { self.twoFactorState = nil },
                             onSubmit: submitPrimaryAction
                         )
                     } else {
@@ -216,7 +218,6 @@ struct LoginView: View {
                     twoFactorToken: state.token
                 )
                 await MainActor.run {
-                    twoFactorState = nil
                     appState.didLogin(account: account)
                     Task { try? await services.syncService.sync(userId: account.id) }
                 }
@@ -230,35 +231,54 @@ struct LoginView: View {
 // MARK: - TwoFactorSection
 
 private struct TwoFactorSection: View {
-    @Binding var state: LoginView.TwoFactorState?
+    let state: LoginView.TwoFactorState
+    let onChange: (LoginView.TwoFactorState) -> Void
+    let onCancel: () -> Void
     let onSubmit: () -> Void
 
     var body: some View {
-        guard let binding = Binding($state) else { return AnyView(EmptyView()) }
-        return AnyView(
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Two-Factor Authentication")
-                    .font(.headline)
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Two-Factor Authentication")
+                .font(.headline)
 
-                if binding.wrappedValue.providers.count > 1 {
-                    Picker("Method", selection: binding.selectedProvider) {
-                        ForEach(Array(binding.wrappedValue.providers.keys), id: \.self) { provider in
-                            Text(provider.displayName).tag(provider)
+            if state.providers.count > 1 {
+                Picker(
+                    "Method",
+                    selection: Binding(
+                        get: { state.selectedProvider },
+                        set: { newValue in
+                            var updated = state
+                            updated.selectedProvider = newValue
+                            onChange(updated)
                         }
+                    )
+                ) {
+                    ForEach(Array(state.providers.keys), id: \.self) { provider in
+                        Text(provider.displayName).tag(provider)
                     }
                 }
-
-                TextField("Verification code", text: binding.token)
-                    .textFieldStyle(.roundedBorder)
-                    .autocorrectionDisabled()
-                    .onSubmit(onSubmit)
-
-                Button("Cancel") { state = nil }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
             }
-        )
+
+            TextField(
+                "Verification code",
+                text: Binding(
+                    get: { state.token },
+                    set: { newValue in
+                        var updated = state
+                        updated.token = newValue
+                        onChange(updated)
+                    }
+                )
+            )
+            .textFieldStyle(.roundedBorder)
+            .autocorrectionDisabled()
+            .onSubmit(onSubmit)
+
+            Button("Cancel", action: onCancel)
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .font(.caption)
+        }
     }
 }
 

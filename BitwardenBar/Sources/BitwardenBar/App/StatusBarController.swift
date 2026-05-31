@@ -67,7 +67,9 @@ final class StatusBarController {
 
         // Close popover when user clicks elsewhere
         eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            self?.closePopover()
+            Task { @MainActor in
+                self?.closePopover()
+            }
         }
     }
 

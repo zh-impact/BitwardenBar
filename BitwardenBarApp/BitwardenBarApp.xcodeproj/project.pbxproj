@@ -1,0 +1,635 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		9C06E7192FCC6CAE00BD7B10 /* BitwardenBar in Frameworks */ = {isa = PBXBuildFile; productRef = 9C06E7182FCC6CAE00BD7B10 /* BitwardenBar */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		9C06E6FA2FCC6BAA00BD7B10 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9C06E6E42FCC6BA900BD7B10 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9C06E6EB2FCC6BA900BD7B10;
+			remoteInfo = BitwardenBarApp;
+		};
+		9C06E7042FCC6BAA00BD7B10 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9C06E6E42FCC6BA900BD7B10 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9C06E6EB2FCC6BA900BD7B10;
+			remoteInfo = BitwardenBarApp;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		9C06E6EC2FCC6BA900BD7B10 /* BitwardenBarApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BitwardenBarApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9C06E6F92FCC6BAA00BD7B10 /* BitwardenBarAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BitwardenBarAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9C06E7032FCC6BAA00BD7B10 /* BitwardenBarAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BitwardenBarAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9C06E7162FCC6BDE00BD7B10 /* BitwardenBar */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BitwardenBar; path = ../BitwardenBar; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		9C06E6EE2FCC6BA900BD7B10 /* BitwardenBarApp */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BitwardenBarApp;
+			sourceTree = "<group>";
+		};
+		9C06E6FC2FCC6BAA00BD7B10 /* BitwardenBarAppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BitwardenBarAppTests;
+			sourceTree = "<group>";
+		};
+		9C06E7062FCC6BAA00BD7B10 /* BitwardenBarAppUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BitwardenBarAppUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		9C06E6E92FCC6BA900BD7B10 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9C06E7192FCC6CAE00BD7B10 /* BitwardenBar in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9C06E6F62FCC6BAA00BD7B10 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9C06E7002FCC6BAA00BD7B10 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		9C06E6E32FCC6BA900BD7B10 = {
+			isa = PBXGroup;
+			children = (
+				9C06E6EE2FCC6BA900BD7B10 /* BitwardenBarApp */,
+				9C06E6FC2FCC6BAA00BD7B10 /* BitwardenBarAppTests */,
+				9C06E7062FCC6BAA00BD7B10 /* BitwardenBarAppUITests */,
+				9C06E6ED2FCC6BA900BD7B10 /* Products */,
+				9C06E7162FCC6BDE00BD7B10 /* BitwardenBar */,
+				9C06E71A2FCC6CF000BD7B10 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		9C06E6ED2FCC6BA900BD7B10 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				9C06E6EC2FCC6BA900BD7B10 /* BitwardenBarApp.app */,
+				9C06E6F92FCC6BAA00BD7B10 /* BitwardenBarAppTests.xctest */,
+				9C06E7032FCC6BAA00BD7B10 /* BitwardenBarAppUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9C06E71A2FCC6CF000BD7B10 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9C06E6EB2FCC6BA900BD7B10 /* BitwardenBarApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9C06E70D2FCC6BAA00BD7B10 /* Build configuration list for PBXNativeTarget "BitwardenBarApp" */;
+			buildPhases = (
+				9C06E6E82FCC6BA900BD7B10 /* Sources */,
+				9C06E6E92FCC6BA900BD7B10 /* Frameworks */,
+				9C06E6EA2FCC6BA900BD7B10 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				9C06E6EE2FCC6BA900BD7B10 /* BitwardenBarApp */,
+			);
+			name = BitwardenBarApp;
+			packageProductDependencies = (
+				9C06E7182FCC6CAE00BD7B10 /* BitwardenBar */,
+			);
+			productName = BitwardenBarApp;
+			productReference = 9C06E6EC2FCC6BA900BD7B10 /* BitwardenBarApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		9C06E6F82FCC6BAA00BD7B10 /* BitwardenBarAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9C06E7102FCC6BAA00BD7B10 /* Build configuration list for PBXNativeTarget "BitwardenBarAppTests" */;
+			buildPhases = (
+				9C06E6F52FCC6BAA00BD7B10 /* Sources */,
+				9C06E6F62FCC6BAA00BD7B10 /* Frameworks */,
+				9C06E6F72FCC6BAA00BD7B10 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9C06E6FB2FCC6BAA00BD7B10 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				9C06E6FC2FCC6BAA00BD7B10 /* BitwardenBarAppTests */,
+			);
+			name = BitwardenBarAppTests;
+			packageProductDependencies = (
+			);
+			productName = BitwardenBarAppTests;
+			productReference = 9C06E6F92FCC6BAA00BD7B10 /* BitwardenBarAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		9C06E7022FCC6BAA00BD7B10 /* BitwardenBarAppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9C06E7132FCC6BAA00BD7B10 /* Build configuration list for PBXNativeTarget "BitwardenBarAppUITests" */;
+			buildPhases = (
+				9C06E6FF2FCC6BAA00BD7B10 /* Sources */,
+				9C06E7002FCC6BAA00BD7B10 /* Frameworks */,
+				9C06E7012FCC6BAA00BD7B10 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9C06E7052FCC6BAA00BD7B10 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				9C06E7062FCC6BAA00BD7B10 /* BitwardenBarAppUITests */,
+			);
+			name = BitwardenBarAppUITests;
+			packageProductDependencies = (
+			);
+			productName = BitwardenBarAppUITests;
+			productReference = 9C06E7032FCC6BAA00BD7B10 /* BitwardenBarAppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9C06E6E42FCC6BA900BD7B10 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2630;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+					9C06E6EB2FCC6BA900BD7B10 = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					9C06E6F82FCC6BAA00BD7B10 = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = 9C06E6EB2FCC6BA900BD7B10;
+					};
+					9C06E7022FCC6BAA00BD7B10 = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = 9C06E6EB2FCC6BA900BD7B10;
+					};
+				};
+			};
+			buildConfigurationList = 9C06E6E72FCC6BA900BD7B10 /* Build configuration list for PBXProject "BitwardenBarApp" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 9C06E6E32FCC6BA900BD7B10;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				9C06E7172FCC6CAE00BD7B10 /* XCLocalSwiftPackageReference "../BitwardenBar" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 9C06E6ED2FCC6BA900BD7B10 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9C06E6EB2FCC6BA900BD7B10 /* BitwardenBarApp */,
+				9C06E6F82FCC6BAA00BD7B10 /* BitwardenBarAppTests */,
+				9C06E7022FCC6BAA00BD7B10 /* BitwardenBarAppUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9C06E6EA2FCC6BA900BD7B10 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9C06E6F72FCC6BAA00BD7B10 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9C06E7012FCC6BAA00BD7B10 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9C06E6E82FCC6BA900BD7B10 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9C06E6F52FCC6BAA00BD7B10 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9C06E6FF2FCC6BAA00BD7B10 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		9C06E6FB2FCC6BAA00BD7B10 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9C06E6EB2FCC6BA900BD7B10 /* BitwardenBarApp */;
+			targetProxy = 9C06E6FA2FCC6BAA00BD7B10 /* PBXContainerItemProxy */;
+		};
+		9C06E7052FCC6BAA00BD7B10 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9C06E6EB2FCC6BA900BD7B10 /* BitwardenBarApp */;
+			targetProxy = 9C06E7042FCC6BAA00BD7B10 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		9C06E70B2FCC6BAA00BD7B10 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = A24YF5373C;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		9C06E70C2FCC6BAA00BD7B10 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = A24YF5373C;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		9C06E70E2FCC6BAA00BD7B10 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BitwardenBarApp/BitwardenBarApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A24YF5373C;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ooo.o3o.app.BitwardenBarApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		9C06E70F2FCC6BAA00BD7B10 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BitwardenBarApp/BitwardenBarApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A24YF5373C;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ooo.o3o.app.BitwardenBarApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		9C06E7112FCC6BAA00BD7B10 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A24YF5373C;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ooo.o3o.app.BitwardenBarAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BitwardenBarApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BitwardenBarApp";
+			};
+			name = Debug;
+		};
+		9C06E7122FCC6BAA00BD7B10 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A24YF5373C;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.7;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ooo.o3o.app.BitwardenBarAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BitwardenBarApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BitwardenBarApp";
+			};
+			name = Release;
+		};
+		9C06E7142FCC6BAA00BD7B10 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A24YF5373C;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ooo.o3o.app.BitwardenBarAppUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = BitwardenBarApp;
+			};
+			name = Debug;
+		};
+		9C06E7152FCC6BAA00BD7B10 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = A24YF5373C;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ooo.o3o.app.BitwardenBarAppUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = BitwardenBarApp;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9C06E6E72FCC6BA900BD7B10 /* Build configuration list for PBXProject "BitwardenBarApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9C06E70B2FCC6BAA00BD7B10 /* Debug */,
+				9C06E70C2FCC6BAA00BD7B10 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9C06E70D2FCC6BAA00BD7B10 /* Build configuration list for PBXNativeTarget "BitwardenBarApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9C06E70E2FCC6BAA00BD7B10 /* Debug */,
+				9C06E70F2FCC6BAA00BD7B10 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9C06E7102FCC6BAA00BD7B10 /* Build configuration list for PBXNativeTarget "BitwardenBarAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9C06E7112FCC6BAA00BD7B10 /* Debug */,
+				9C06E7122FCC6BAA00BD7B10 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9C06E7132FCC6BAA00BD7B10 /* Build configuration list for PBXNativeTarget "BitwardenBarAppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9C06E7142FCC6BAA00BD7B10 /* Debug */,
+				9C06E7152FCC6BAA00BD7B10 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		9C06E7172FCC6CAE00BD7B10 /* XCLocalSwiftPackageReference "../BitwardenBar" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../BitwardenBar;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9C06E7182FCC6CAE00BD7B10 /* BitwardenBar */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BitwardenBar;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 9C06E6E42FCC6BA900BD7B10 /* Project object */;
+}

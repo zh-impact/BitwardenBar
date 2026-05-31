@@ -46,7 +46,8 @@ final class AuthService {
 
     /// Step 1: Pre-login to fetch KDF config
     func preLogin(email: String, serverConfig: ServerConfig?) async throws -> PreLoginResponse {
-        return try await apiService.send(PreLoginRequest(email: email, serverConfig: serverConfig))
+        let requestEmail = trimEmail(email)
+        return try await apiService.send(PreLoginRequest(email: requestEmail, serverConfig: serverConfig))
     }
 
     /// Step 2: Full login with password (and optional 2FA token)
@@ -59,16 +60,19 @@ final class AuthService {
         twoFactorProvider: TwoFactorProvider? = nil,
         twoFactorToken: String? = nil
     ) async throws -> Account {
+        let requestEmail = trimEmail(email)
+        let normalizedEmail = normalizeEmail(email)
+
         let masterPasswordHash = try await cryptoService.hashMasterPassword(
             password,
-            email: email,
+            email: normalizedEmail,
             kdfConfig: kdfConfig
         )
 
         let deviceId = keychain.deviceIdentifier()
 
         let tokenResponse = try await apiService.send(IdentityTokenRequest(
-            email: email,
+            email: requestEmail,
             masterPasswordHash: masterPasswordHash,
             deviceIdentifier: deviceId,
             serverConfig: serverConfig,
@@ -84,7 +88,7 @@ final class AuthService {
 
         let account = Account(
             id: profileResponse.id,
-            email: email,
+            email: normalizeEmail(profileResponse.email),
             name: profileResponse.name,
             identityURL: serverConfig?.identityURL,
             apiURL: serverConfig?.apiURL,
@@ -99,6 +103,7 @@ final class AuthService {
         )
 
         accountStore.addOrUpdate(account)
+        accountStore.setActive(id: account.id)
         try accountStore.saveToken(token, for: account.id)
 
         // Unlock vault immediately
@@ -111,7 +116,7 @@ final class AuthService {
 
         try await cryptoService.unlockVault(
             userId: account.id,
-            email: email,
+            email: normalizedEmail,
             password: password,
             kdfConfig: kdfConfig,
             userKey: userKey,
@@ -290,5 +295,13 @@ final class AuthService {
         } catch {
             keychain.deleteBiometricUserKey(for: userId)
         }
+    }
+
+    private func normalizeEmail(_ email: String) -> String {
+        trimEmail(email).lowercased()
+    }
+
+    private func trimEmail(_ email: String) -> String {
+        email.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

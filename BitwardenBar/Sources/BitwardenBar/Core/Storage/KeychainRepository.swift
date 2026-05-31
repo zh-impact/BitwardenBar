@@ -57,8 +57,6 @@ final class KeychainRepository {
         }
 
         let account = biometricUserKeyKey(userId)
-        delete(account: account)
-
         let query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
@@ -68,7 +66,26 @@ final class KeychainRepository {
             kSecAttrLabel: "Biometric User Key for \(userId)"
         ]
 
+        let itemQuery: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: account
+        ]
+
         let status = SecItemAdd(query as CFDictionary, nil)
+        if status == errSecDuplicateItem {
+            let updateStatus = SecItemUpdate(
+                itemQuery as CFDictionary,
+                [
+                    kSecValueData: data,
+                    kSecAttrLabel: "Biometric User Key for \(userId)"
+                ] as CFDictionary
+            )
+            guard updateStatus == errSecSuccess else {
+                throw KeychainError.saveFailed(status: updateStatus)
+            }
+            return
+        }
         guard status == errSecSuccess else {
             throw KeychainError.saveFailed(status: status)
         }
@@ -178,14 +195,26 @@ final class KeychainRepository {
             kSecAttrLabel: "Keychain item for \(account)"
         ]
 
-        let deleteQuery: [CFString: Any] = [
+        let itemQuery: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
             kSecAttrAccount: account
         ]
-        SecItemDelete(deleteQuery as CFDictionary)
 
         let status = SecItemAdd(query as CFDictionary, nil)
+        if status == errSecDuplicateItem {
+            let updateStatus = SecItemUpdate(
+                itemQuery as CFDictionary,
+                [
+                    kSecValueData: data,
+                    kSecAttrLabel: "Keychain item for \(account)"
+                ] as CFDictionary
+            )
+            guard updateStatus == errSecSuccess else {
+                throw KeychainError.saveFailed(status: updateStatus)
+            }
+            return
+        }
         guard status == errSecSuccess else {
             throw KeychainError.saveFailed(status: status)
         }
@@ -221,4 +250,21 @@ enum KeychainError: Error {
     case saveFailed(status: OSStatus)
     case encodingFailed
     case accessControlCreationFailed(error: CFError?)
+}
+
+extension KeychainError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .saveFailed(let status):
+            let message = SecCopyErrorMessageString(status, nil) as String? ?? "Unknown Keychain error"
+            return "Keychain save failed (\(status)): \(message)"
+        case .encodingFailed:
+            return "Failed to encode data for Keychain storage."
+        case .accessControlCreationFailed(let error):
+            if let error {
+                return "Failed to create Keychain access control: \(error.localizedDescription)"
+            }
+            return "Failed to create Keychain access control."
+        }
+    }
 }

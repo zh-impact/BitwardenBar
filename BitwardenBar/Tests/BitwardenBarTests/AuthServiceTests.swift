@@ -71,6 +71,155 @@ final class AuthServiceTests: XCTestCase {
         XCTAssertEqual(keychain.encryptedUserKey(for: account.id), refreshedUserKey)
     }
 
+    func testLoginSetsLoggedInAccountActive() async throws {
+        let keychain = KeychainRepository()
+        let accountStore = AccountStore(keychain: keychain)
+        let cryptoService = CryptoService()
+        let session = makeMockSession()
+        let apiService = APIService(accountStore: accountStore, session: session)
+        let authService = AuthService(
+            apiService: apiService,
+            cryptoService: cryptoService,
+            accountStore: accountStore,
+            keychainRepository: keychain,
+            biometricAvailabilityOverride: { false }
+        )
+
+        let staleAccount = Account(
+            id: "stale-user",
+            email: "stale@example.com",
+            name: "Stale",
+            identityURL: URL(string: "https://identity.example.com")!,
+            apiURL: URL(string: "https://api.example.com")!,
+            kdfConfig: KdfConfig(type: .pbkdf2Sha256, iterations: 2, memory: nil, parallelism: nil)
+        )
+        accountStore.addOrUpdate(staleAccount)
+
+        let expectedUserId = "fresh-user"
+        let expectedEmail = "fresh@example.com"
+        let expectedPassword = "correct horse battery staple"
+        let expectedKdf = KdfConfig(type: .pbkdf2Sha256, iterations: 2, memory: nil, parallelism: nil)
+        let expectedCombined = Data((0..<64).map(UInt8.init))
+        let encryptedUserKey = try makeEncryptedUserKey(
+            password: expectedPassword,
+            email: expectedEmail,
+            kdfConfig: expectedKdf,
+            combinedKey: expectedCombined
+        )
+
+        MockURLProtocol.requestHandler = { request in
+            switch request.url?.path {
+            case "/connect/token":
+                let body = try JSONEncoder().encode(EncodableIdentityTokenResponse(
+                    accessToken: "fresh-access-token",
+                    expiresIn: 3600,
+                    tokenType: "Bearer",
+                    refreshToken: "fresh-refresh-token",
+                    key: encryptedUserKey,
+                    privateKey: "unused"
+                ))
+                return (
+                    HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!,
+                    body
+                )
+
+            case "/accounts/profile":
+                let body = try JSONEncoder().encode(EncodableProfileResponse(
+                    id: expectedUserId,
+                    email: expectedEmail,
+                    name: "Fresh",
+                    key: encryptedUserKey,
+                    privateKey: "unused"
+                ))
+                return (
+                    HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!,
+                    body
+                )
+
+            default:
+                throw URLError(.badURL)
+            }
+        }
+
+        let account = try await authService.login(
+            email: expectedEmail,
+            password: expectedPassword,
+            kdfConfig: expectedKdf,
+            serverConfig: nil
+        )
+
+        XCTAssertEqual(account.id, expectedUserId)
+        XCTAssertEqual(accountStore.activeAccountId, expectedUserId)
+        XCTAssertEqual(accountStore.activeAccount?.id, expectedUserId)
+    }
+
+    func testLoginStoresCanonicalNormalizedEmail() async throws {
+        let keychain = KeychainRepository()
+        let accountStore = AccountStore(keychain: keychain)
+        let cryptoService = CryptoService()
+        let session = makeMockSession()
+        let apiService = APIService(accountStore: accountStore, session: session)
+        let authService = AuthService(
+            apiService: apiService,
+            cryptoService: cryptoService,
+            accountStore: accountStore,
+            keychainRepository: keychain,
+            biometricAvailabilityOverride: { false }
+        )
+
+        let encryptedUserKey = try makeEncryptedUserKey(
+            password: "correct horse battery staple",
+            email: "yr6kami@gmail.com",
+            kdfConfig: KdfConfig(type: .pbkdf2Sha256, iterations: 2, memory: nil, parallelism: nil),
+            combinedKey: Data((0..<64).map(UInt8.init))
+        )
+
+        MockURLProtocol.requestHandler = { request in
+            switch request.url?.path {
+            case "/connect/token":
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Auth-Email"), Data("Yr6Kami@GMAIL.com".utf8).base64EncodedString().trimmingCharacters(in: CharacterSet(charactersIn: "=")))
+                let body = try JSONEncoder().encode(EncodableIdentityTokenResponse(
+                    accessToken: "fresh-access-token",
+                    expiresIn: 3600,
+                    tokenType: "Bearer",
+                    refreshToken: "fresh-refresh-token",
+                    key: encryptedUserKey,
+                    privateKey: "unused"
+                ))
+                return (
+                    HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!,
+                    body
+                )
+
+            case "/accounts/profile":
+                let body = try JSONEncoder().encode(EncodableProfileResponse(
+                    id: "fresh-user",
+                    email: "Yr6Kami@GMAIL.com",
+                    name: "Fresh",
+                    key: encryptedUserKey,
+                    privateKey: "unused"
+                ))
+                return (
+                    HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!,
+                    body
+                )
+
+            default:
+                throw URLError(.badURL)
+            }
+        }
+
+        let account = try await authService.login(
+            email: "  Yr6Kami@GMAIL.com  ",
+            password: "correct horse battery staple",
+            kdfConfig: KdfConfig(type: .pbkdf2Sha256, iterations: 2, memory: nil, parallelism: nil),
+            serverConfig: nil
+        )
+
+        XCTAssertEqual(account.email, "yr6kami@gmail.com")
+        XCTAssertEqual(accountStore.activeAccount?.email, "yr6kami@gmail.com")
+    }
+
     func testCanUnlockWithBiometricsUsesGenericUserKeyFallbackWhenBiometricsAvailable() throws {
         let keychain = KeychainRepository()
         let accountStore = AccountStore(keychain: keychain)
@@ -217,6 +366,24 @@ private struct EncodableProfileResponse: Encodable {
     let name: String?
     let key: String?
     let privateKey: String?
+}
+
+private struct EncodableIdentityTokenResponse: Encodable {
+    let accessToken: String
+    let expiresIn: Int
+    let tokenType: String
+    let refreshToken: String
+    let key: String?
+    let privateKey: String?
+
+    enum CodingKeys: String, CodingKey {
+        case accessToken = "access_token"
+        case expiresIn = "expires_in"
+        case tokenType = "token_type"
+        case refreshToken = "refresh_token"
+        case key = "Key"
+        case privateKey = "PrivateKey"
+    }
 }
 
 private final class MockURLProtocol: URLProtocol {

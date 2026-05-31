@@ -6,3 +6,7 @@
 /BitwardenBar/vendor/sdk-swift
 
 .vscode/settings.json
+
+# Xcode user-specific state
+*.xcuserstate
+**/xcuserdata/
