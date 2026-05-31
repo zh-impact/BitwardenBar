@@ -35,6 +35,7 @@ struct RootView: View {
             }
         }
         .frame(width: 360)
+        .frame(height: appState.preferredPopoverHeight)
         .background(Color(.windowBackgroundColor))
     }
 }

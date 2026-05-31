@@ -10,7 +10,7 @@ private let statusBarLogger = Logger(
 
 /// Manages the NSStatusItem (menu bar icon) and the NSPopover that shows vault UI.
 @MainActor
-final class StatusBarController {
+final class StatusBarController: NSObject, NSPopoverDelegate {
 
     // MARK: - Properties
 
@@ -25,6 +25,7 @@ final class StatusBarController {
 
     init(services: ServiceContainer) {
         self.services = services
+        super.init()
     }
 
     // MARK: - Setup / Teardown
@@ -56,14 +57,22 @@ final class StatusBarController {
 
     private func setupPopover() {
         let popover = NSPopover()
-        popover.contentSize = NSSize(width: 360, height: 500)
+        popover.contentSize = NSSize(width: 360, height: services.appState.preferredPopoverHeight)
         popover.behavior = .transient
         popover.animates = true
+        popover.delegate = self
 
         let rootView = RootView(services: services)
         popover.contentViewController = NSHostingController(rootView: rootView)
 
         self.popover = popover
+
+        services.appState.$lockState
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.updatePopoverSize()
+            }
+            .store(in: &cancellables)
 
         // Close popover when user clicks elsewhere
         eventMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
@@ -122,6 +131,7 @@ final class StatusBarController {
     func showPopover() {
         guard let button = statusItem?.button, let popover else { return }
         statusBarLogger.notice("Showing popover from hotkey or status item")
+        updatePopoverSize()
         // Temporarily switch to .regular so the popover window can become key,
         // which enables standard keyboard shortcuts (Cmd+V, Cmd+A, etc.) in text fields.
         NSApp.setActivationPolicy(.regular)
@@ -135,6 +145,21 @@ final class StatusBarController {
     private func closePopover() {
         statusBarLogger.notice("Closing popover")
         popover?.performClose(nil)
+    }
+
+    private func updatePopoverSize() {
+        let size = NSSize(width: 360, height: services.appState.preferredPopoverHeight)
+        popover?.contentSize = size
+        popover?.contentViewController?.preferredContentSize = size
+        popover?.contentViewController?.view.window?.setContentSize(size)
+    }
+
+    func popoverDidShow(_ notification: Notification) {
+        services.popoverState.didShow()
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        services.popoverState.didClose()
         // Return to accessory policy so the app hides from Dock and App Switcher.
         NSApp.setActivationPolicy(.accessory)
     }

@@ -1,5 +1,18 @@
 import Foundation
 
+@MainActor
+final class PopoverState: ObservableObject {
+    @Published private(set) var isPresented = false
+
+    func didShow() {
+        isPresented = true
+    }
+
+    func didClose() {
+        isPresented = false
+    }
+}
+
 /// Dependency injection container — creates and wires all services.
 /// Passed down through the view hierarchy via SwiftUI environment or direct injection.
 @MainActor
@@ -33,6 +46,7 @@ final class ServiceContainer {
     // MARK: - App State
 
     let appState: AppState
+    let popoverState: PopoverState
 
     // MARK: - Init
 
@@ -80,5 +94,6 @@ final class ServiceContainer {
             accountStore: accountStore,
             authService: authService
         )
+        popoverState = PopoverState()
     }
 }

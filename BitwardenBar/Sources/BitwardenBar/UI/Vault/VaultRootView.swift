@@ -90,6 +90,16 @@ struct VaultRootView: View {
                     .foregroundStyle(.tertiary)
                 Spacer()
                 Button {
+                    services.authService.logout(userId: account.id)
+                    appState.didLogout()
+                } label: {
+                    Label("Logout", systemImage: "rectangle.portrait.and.arrow.right")
+                        .font(.caption)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+
+                Button {
                     services.authService.lock(userId: account.id)
                     appState.didLock()
                 } label: {
@@ -103,6 +113,11 @@ struct VaultRootView: View {
             .padding(.vertical, 6)
         }
         .onAppear { viewModel.load() }
+        .onReceive(services.popoverState.$isPresented) { isPresented in
+            if !isPresented {
+                showSettings = false
+            }
+        }
         .sheet(isPresented: $showSettings) {
             SettingsView(
                 account: account,

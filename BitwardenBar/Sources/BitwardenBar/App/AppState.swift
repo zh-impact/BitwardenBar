@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 import Combine
 
 /// Observable container for app-wide authentication / lock state.
@@ -49,5 +50,16 @@ final class AppState: ObservableObject {
     func didLogout() {
         activeAccount = accountStore.activeAccount
         lockState = activeAccount == nil ? .noAccount : .locked
+    }
+
+    var preferredPopoverHeight: CGFloat {
+        switch lockState {
+        case .locked:
+            return 260
+        case .unlocked:
+            return 500
+        case .noAccount:
+            return 420
+        }
     }
 }

@@ -123,7 +123,7 @@ final class AuthService {
             privateKey: privateKey
         )
 
-        seedBiometricUnlockMaterialIfAvailable(for: account.id)
+        persistGenericUnlockMaterialIfAvailable(for: account.id)
 
         return account
     }
@@ -154,7 +154,7 @@ final class AuthService {
                 userKey: material.userKey,
                 privateKey: material.privateKey
             )
-            seedBiometricUnlockMaterialIfAvailable(for: account.id)
+            persistGenericUnlockMaterialIfAvailable(for: account.id)
         } catch is BWCryptoError {
             let freshMaterial = try await refreshLoginKeyMaterial(for: account.id)
             try await unlockVault(
@@ -165,7 +165,7 @@ final class AuthService {
                 userKey: freshMaterial.userKey,
                 privateKey: freshMaterial.privateKey
             )
-            seedBiometricUnlockMaterialIfAvailable(for: account.id)
+            persistGenericUnlockMaterialIfAvailable(for: account.id)
         }
     }
 
@@ -214,7 +214,6 @@ final class AuthService {
     // MARK: - Lock
 
     func lock(userId: String) {
-        seedBiometricUnlockMaterialIfAvailable(for: userId)
         cryptoService.clearClient(for: userId)
     }
 
@@ -307,24 +306,12 @@ final class AuthService {
         throw lastError ?? BWCryptoError.macVerificationFailed
     }
 
-    private func seedBiometricUnlockMaterialIfAvailable(for userId: String) {
+    private func persistGenericUnlockMaterialIfAvailable(for userId: String) {
         guard let decryptedUserKey = try? cryptoService.vaultKey(for: userId).combined.base64EncodedString() else {
             return
         }
 
         try? keychain.saveUserKey(decryptedUserKey, for: userId)
-
-        var authError: NSError?
-        let context = LAContext()
-        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &authError) else {
-            return
-        }
-
-        do {
-            try keychain.saveBiometricUserKey(decryptedUserKey, for: userId)
-        } catch {
-            keychain.deleteBiometricUserKey(for: userId)
-        }
     }
 
     private func normalizeEmail(_ email: String) -> String {

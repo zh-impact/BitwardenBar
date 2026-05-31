@@ -338,6 +338,42 @@ final class AuthServiceTests: XCTestCase {
         XCTAssertEqual(try cryptoService.vaultKey(for: legacyStoredAccount.id).combined, expectedCombined)
     }
 
+    func testPasswordUnlockDoesNotCreateDedicatedBiometricKey() async throws {
+        let keychain = KeychainRepository()
+        let accountStore = AccountStore(keychain: keychain)
+        let cryptoService = CryptoService()
+        let authService = AuthService(
+            apiService: APIService(accountStore: accountStore),
+            cryptoService: cryptoService,
+            accountStore: accountStore,
+            keychainRepository: keychain,
+            biometricAvailabilityOverride: { true }
+        )
+
+        let password = "correct horse battery staple"
+        let account = makeAccount()
+        let expectedCombined = Data((0..<64).map(UInt8.init))
+        let encryptedUserKey = try makeEncryptedUserKey(
+            password: password,
+            email: account.email,
+            kdfConfig: account.kdfConfig,
+            combinedKey: expectedCombined
+        )
+
+        accountStore.addOrUpdate(account)
+        defer { accountStore.remove(id: account.id) }
+
+        try accountStore.saveToken(makeToken(), for: account.id)
+        try keychain.saveEncryptedUserKey(encryptedUserKey, for: account.id)
+        try keychain.savePrivateKey("unused", for: account.id)
+
+        try await authService.unlock(password: password, account: account)
+
+        XCTAssertTrue(cryptoService.isUnlocked(for: account.id))
+        XCTAssertNotNil(keychain.userKey(for: account.id))
+        XCTAssertFalse(keychain.hasBiometricUserKey(for: account.id))
+    }
+
     func testLoginOverwritesStaleStoredKeyMaterialForExistingAccount() async throws {
         let keychain = KeychainRepository()
         let accountStore = AccountStore(keychain: keychain)
@@ -472,6 +508,35 @@ final class AuthServiceTests: XCTestCase {
 
         XCTAssertTrue(cryptoService.isUnlocked(for: account.id))
         XCTAssertEqual(try cryptoService.vaultKey(for: account.id).combined, combined)
+    }
+
+    func testLockDoesNotCreateDedicatedBiometricKey() async throws {
+        let keychain = KeychainRepository()
+        let accountStore = AccountStore(keychain: keychain)
+        let cryptoService = CryptoService()
+        let authService = AuthService(
+            apiService: APIService(accountStore: accountStore),
+            cryptoService: cryptoService,
+            accountStore: accountStore,
+            keychainRepository: keychain,
+            biometricAvailabilityOverride: { true }
+        )
+
+        let account = makeAccount()
+        let combined = Data((0..<64).map(UInt8.init))
+        accountStore.addOrUpdate(account)
+        defer { accountStore.remove(id: account.id) }
+
+        try await cryptoService.unlockVaultWithKey(
+            userId: account.id,
+            decryptedUserKey: combined.base64EncodedString(),
+            privateKey: "unused"
+        )
+
+        authService.lock(userId: account.id)
+
+        XCTAssertFalse(cryptoService.isUnlocked(for: account.id))
+        XCTAssertFalse(keychain.hasBiometricUserKey(for: account.id))
     }
 
     private func makeMockSession() -> URLSession {
