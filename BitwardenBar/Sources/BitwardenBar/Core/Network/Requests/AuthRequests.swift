@@ -32,8 +32,8 @@ struct PreLoginResponse: Decodable {
 // MARK: - Identity Token (Login)
 
 /// Authenticates against the Bitwarden identity server using the OAuth2 Resource Owner
-/// Password Credentials grant.  The endpoint requires `application/x-www-form-urlencoded`,
-/// the `Auth-Email` header, and Bitwarden client-identification headers.
+/// Password Credentials grant. The endpoint requires `application/x-www-form-urlencoded`
+/// and a `Device-Type` header.
 struct IdentityTokenRequest: APIRequest {
     typealias Response = IdentityTokenResponse
 
@@ -73,15 +73,11 @@ struct IdentityTokenRequest: APIRequest {
     }
 
     var additionalHeaders: [String: String] {
-        // Auth-Email is the base64 of the email address (without padding).
-        let emailB64 = Data(email.utf8).base64EncodedString()
-            .trimmingCharacters(in: CharacterSet(charactersIn: "="))
         return [
             // Identity server requires Accept: application/json to return JSON errors.
             "Accept": "application/json",
             // Device-Type is required as a header (separate from deviceType in the form body).
             "Device-Type": "7",           // 7 = MacOsDesktop
-            "Auth-Email": emailB64,
             // NOTE: Bitwarden-Client-Name / Bitwarden-Client-Version are NOT sent on the
             // token endpoint by the official clients — only on authenticated API calls.
         ]

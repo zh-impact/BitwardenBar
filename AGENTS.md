@@ -12,7 +12,7 @@ Prefer changing `BitwardenBar/` only. Treat both `references/` trees as document
 
 - Build from `BitwardenBar/` with `swift build`.
 - Run tests from `BitwardenBar/` with `swift test`.
-- The app is a Swift Package Manager executable target declared in [BitwardenBar/Package.swift](BitwardenBar/Package.swift).
+- The package now exposes a reusable `BitwardenBar` library product plus a thin standalone executable declared in [BitwardenBar/Package.swift](BitwardenBar/Package.swift).
 - `setup.sh` exists mainly to clone and patch `vendor/sdk-swift` for reference use. The current app does not depend on that SDK at runtime.
 
 ## High-value code map
@@ -39,7 +39,7 @@ These details were confirmed against `references/clients/` and should be preserv
 
 - Prelogin must use the identity server, not the API server.
 - `/connect/token` must be `application/x-www-form-urlencoded`, not JSON.
-- Token requests must include `Auth-Email` as base64 without `=` padding.
+- Password `/connect/token` requests should not send `Auth-Email`; current Bitwarden iOS references explicitly treat that header as deprecated for password login.
 - Token requests must send `Device-Type: 7` as an HTTP header, not only `deviceType=7` in the form body.
 - Token requests should send `Accept: application/json`.
 - `Bitwarden-Client-Name` and `Bitwarden-Client-Version` should not be attached to the token endpoint request itself.
@@ -50,6 +50,7 @@ These details were confirmed against `references/clients/` and should be preserv
 ## Login and 2FA flow notes
 
 - The primary login path is: prelogin -> token request -> profile request -> unlock vault -> initial sync.
+- The currently verified happy path is: account password login -> manual 2FA -> successful vault login -> trigger lock -> unlock with master password -> success.
 - `GetProfileRequest` supports an explicit access-token override so login can fetch the profile before an active account exists in `AccountStore`.
 - The 2FA screen in [BitwardenBar/Sources/BitwardenBar/UI/Auth/LoginView.swift](BitwardenBar/Sources/BitwardenBar/UI/Auth/LoginView.swift) has separate state-aware submit handling. Do not collapse it back to always calling the first-step login action.
 - If 2FA appears to succeed but the UI stays on the code-entry screen, check `LoginView` button wiring first.
@@ -67,7 +68,7 @@ These details were confirmed against `references/clients/` and should be preserv
 
 - The app uses `.accessory` activation policy at rest and temporarily switches to `.regular` when showing the popover so text input and paste work.
 - `StatusBarController.showPopover()` must keep making the window key; otherwise paste and keyboard interaction regress.
-- `HotKeyMonitor` retries accessibility setup silently after the first prompt to avoid an endless permissions dialog loop.
+- Global shortcut handling now uses Carbon `RegisterEventHotKey`, not the old Accessibility-dependent event tap path.
 
 ## Current rough edges
 

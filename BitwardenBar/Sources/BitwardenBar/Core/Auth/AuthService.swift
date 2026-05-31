@@ -137,6 +137,7 @@ final class AuthService {
         }
 
         let localMaterial = currentLoginKeyMaterial(for: account.id)
+        let emailCandidates = unlockEmailCandidates(for: account.email)
 
         do {
             let material: (userKey: String, privateKey: String)
@@ -145,9 +146,9 @@ final class AuthService {
             } else {
                 material = try await refreshLoginKeyMaterial(for: account.id)
             }
-            try await cryptoService.unlockVault(
+            try await unlockVault(
                 userId: account.id,
-                email: account.email,
+                emailCandidates: emailCandidates,
                 password: password,
                 kdfConfig: account.kdfConfig,
                 userKey: material.userKey,
@@ -156,9 +157,9 @@ final class AuthService {
             seedBiometricUnlockMaterialIfAvailable(for: account.id)
         } catch is BWCryptoError {
             let freshMaterial = try await refreshLoginKeyMaterial(for: account.id)
-            try await cryptoService.unlockVault(
+            try await unlockVault(
                 userId: account.id,
-                email: account.email,
+                emailCandidates: emailCandidates,
                 password: password,
                 kdfConfig: account.kdfConfig,
                 userKey: freshMaterial.userKey,
@@ -277,6 +278,35 @@ final class AuthService {
         try keychain.savePrivateKey(privateKey, for: userId)
     }
 
+    private func unlockVault(
+        userId: String,
+        emailCandidates: [String],
+        password: String,
+        kdfConfig: KdfConfig,
+        userKey: EncryptedString,
+        privateKey: EncryptedString
+    ) async throws {
+        var lastError: Error?
+
+        for email in emailCandidates {
+            do {
+                try await cryptoService.unlockVault(
+                    userId: userId,
+                    email: email,
+                    password: password,
+                    kdfConfig: kdfConfig,
+                    userKey: userKey,
+                    privateKey: privateKey
+                )
+                return
+            } catch {
+                lastError = error
+            }
+        }
+
+        throw lastError ?? BWCryptoError.macVerificationFailed
+    }
+
     private func seedBiometricUnlockMaterialIfAvailable(for userId: String) {
         guard let decryptedUserKey = try? cryptoService.vaultKey(for: userId).combined.base64EncodedString() else {
             return
@@ -303,5 +333,11 @@ final class AuthService {
 
     private func trimEmail(_ email: String) -> String {
         email.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func unlockEmailCandidates(for email: String) -> [String] {
+        let trimmedEmail = trimEmail(email)
+        let normalizedEmail = normalizeEmail(email)
+        return Array(NSOrderedSet(array: [trimmedEmail, normalizedEmail])) as? [String] ?? [trimmedEmail]
     }
 }
