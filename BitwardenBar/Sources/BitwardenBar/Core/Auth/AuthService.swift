@@ -12,6 +12,9 @@ final class AuthService {
     private let cryptoService: CryptoService
     private let accountStore: AccountStore
     private let keychain: KeychainRepository
+    private let biometricAvailabilityOverride: (() -> Bool)?
+    private let biometricEvaluationOverride: ((LAContext) async throws -> Void)?
+    private let biometricUserKeyReaderOverride: ((String, LAContext) -> String?)?
 
     // MARK: - Init
 
@@ -19,12 +22,18 @@ final class AuthService {
         apiService: APIService,
         cryptoService: CryptoService,
         accountStore: AccountStore,
-        keychainRepository: KeychainRepository
+        keychainRepository: KeychainRepository,
+        biometricAvailabilityOverride: (() -> Bool)? = nil,
+        biometricEvaluationOverride: ((LAContext) async throws -> Void)? = nil,
+        biometricUserKeyReaderOverride: ((String, LAContext) -> String?)? = nil
     ) {
         self.apiService = apiService
         self.cryptoService = cryptoService
         self.accountStore = accountStore
         self.keychain = keychainRepository
+        self.biometricAvailabilityOverride = biometricAvailabilityOverride
+        self.biometricEvaluationOverride = biometricEvaluationOverride
+        self.biometricUserKeyReaderOverride = biometricUserKeyReaderOverride
     }
 
     // MARK: - Login
@@ -37,8 +46,7 @@ final class AuthService {
 
     /// Step 1: Pre-login to fetch KDF config
     func preLogin(email: String, serverConfig: ServerConfig?) async throws -> PreLoginResponse {
-        // Temporarily apply server config if provided
-        return try await apiService.send(PreLoginRequest(email: email))
+        return try await apiService.send(PreLoginRequest(email: email, serverConfig: serverConfig))
     }
 
     /// Step 2: Full login with password (and optional 2FA token)
@@ -63,12 +71,16 @@ final class AuthService {
             email: email,
             masterPasswordHash: masterPasswordHash,
             deviceIdentifier: deviceId,
+            serverConfig: serverConfig,
             twoFactorProvider: twoFactorProvider,
             twoFactorToken: twoFactorToken
         ))
 
         // Fetch profile for userId
-        let profileResponse = try await apiService.send(GetProfileRequest(accessToken: tokenResponse.accessToken))
+        let profileResponse = try await apiService.send(GetProfileRequest(
+            accessToken: tokenResponse.accessToken,
+            serverConfig: serverConfig
+        ))
 
         let account = Account(
             id: profileResponse.id,
@@ -106,8 +118,7 @@ final class AuthService {
             privateKey: privateKey
         )
 
-        // Optionally store user key for biometric unlock
-        // (The "decrypted user key" is obtained from SDK for biometric storage)
+        seedBiometricUnlockMaterialIfAvailable(for: account.id)
 
         return account
     }
@@ -137,7 +148,8 @@ final class AuthService {
                 userKey: material.userKey,
                 privateKey: material.privateKey
             )
-        } catch BWCryptoError.macVerificationFailed {
+            seedBiometricUnlockMaterialIfAvailable(for: account.id)
+        } catch is BWCryptoError {
             let freshMaterial = try await refreshLoginKeyMaterial(for: account.id)
             try await cryptoService.unlockVault(
                 userId: account.id,
@@ -147,36 +159,56 @@ final class AuthService {
                 userKey: freshMaterial.userKey,
                 privateKey: freshMaterial.privateKey
             )
+            seedBiometricUnlockMaterialIfAvailable(for: account.id)
         }
     }
 
     /// Unlock vault using Touch ID / biometrics
     /// Retrieves the stored symmetric key from Keychain (protected by Secure Enclave)
     func unlockWithBiometrics(account: Account) async throws {
+        guard accountStore.token(for: account.id) != nil else {
+            throw BitwardenError.unauthorized
+        }
+
         let context = LAContext()
-        var authError: NSError?
-
-        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &authError) else {
-            throw BitwardenError.cryptoError(message: authError?.localizedDescription ?? "Biometrics not available")
+        if let biometricAvailabilityOverride {
+            guard biometricAvailabilityOverride() else {
+                throw BitwardenError.cryptoError(message: "Biometrics not available")
+            }
+        } else {
+            var authError: NSError?
+            guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &authError) else {
+                throw BitwardenError.cryptoError(message: authError?.localizedDescription ?? "Biometrics not available")
+            }
         }
 
-        try await context.evaluatePolicy(
-            .deviceOwnerAuthenticationWithBiometrics,
-            localizedReason: "Unlock your Bitwarden vault"
+        if let biometricEvaluationOverride {
+            try await biometricEvaluationOverride(context)
+        } else {
+            try await context.evaluatePolicy(
+                .deviceOwnerAuthenticationWithBiometrics,
+                localizedReason: "Unlock your Bitwarden vault"
+            )
+        }
+
+        guard let decryptedUserKey = (biometricUserKeyReaderOverride?(account.id, context)
+            ?? keychain.biometricUserKey(for: account.id, context: context))
+            ?? keychain.userKey(for: account.id) else {
+            keychain.deleteBiometricUserKey(for: account.id)
+            throw BitwardenError.cryptoError(message: "Biometric unlock is unavailable. Please enter your master password.")
+        }
+
+        try await cryptoService.unlockVaultWithKey(
+            userId: account.id,
+            decryptedUserKey: decryptedUserKey,
+            privateKey: keychain.privateKey(for: account.id) ?? ""
         )
-
-        guard let _ = keychain.userKey(for: account.id) else {
-            throw BitwardenError.cryptoError(message: "No stored key for biometric unlock. Please enter master password.")
-        }
-
-        // Private key must also be stored or re-fetched
-        // For MVP, we require master password if no stored private key
-        throw BitwardenError.cryptoError(message: "Biometric unlock: private key storage not yet implemented.")
     }
 
     // MARK: - Lock
 
     func lock(userId: String) {
+        seedBiometricUnlockMaterialIfAvailable(for: userId)
         cryptoService.clearClient(for: userId)
     }
 
@@ -195,6 +227,23 @@ final class AuthService {
 
     func isUnlocked(for userId: String) -> Bool {
         cryptoService.isUnlocked(for: userId)
+    }
+
+    func canUnlockWithBiometrics(account: Account) -> Bool {
+        if let biometricAvailabilityOverride {
+            guard biometricAvailabilityOverride() else {
+                return false
+            }
+        } else {
+            var authError: NSError?
+            let context = LAContext()
+            guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &authError) else {
+                return false
+            }
+        }
+
+        return keychain.hasBiometricUserKey(for: account.id)
+            || keychain.userKey(for: account.id) != nil
     }
 
     // MARK: - Private
@@ -221,5 +270,25 @@ final class AuthService {
     private func storeLoginKeyMaterial(userKey: String, privateKey: String, userId: String) throws {
         try keychain.saveEncryptedUserKey(userKey, for: userId)
         try keychain.savePrivateKey(privateKey, for: userId)
+    }
+
+    private func seedBiometricUnlockMaterialIfAvailable(for userId: String) {
+        guard let decryptedUserKey = try? cryptoService.vaultKey(for: userId).combined.base64EncodedString() else {
+            return
+        }
+
+        try? keychain.saveUserKey(decryptedUserKey, for: userId)
+
+        var authError: NSError?
+        let context = LAContext()
+        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &authError) else {
+            return
+        }
+
+        do {
+            try keychain.saveBiometricUserKey(decryptedUserKey, for: userId)
+        } catch {
+            keychain.deleteBiometricUserKey(for: userId)
+        }
     }
 }

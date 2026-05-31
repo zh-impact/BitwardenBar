@@ -6,9 +6,17 @@ struct PreLoginRequest: APIRequest {
     typealias Response = PreLoginResponse
 
     let email: String
+    let serverConfig: ServerConfig?
+
+    init(email: String, serverConfig: ServerConfig? = nil) {
+        self.email = email
+        self.serverConfig = serverConfig
+    }
+
     var path: String { "/accounts/prelogin" }
     var method: HTTPMethod { .post }
     var body: Encodable? { ["email": email] }
+    var serverConfigOverride: ServerConfig? { serverConfig }
     var requiresAuth: Bool { false }
     // Pre-login lives on the identity server, not the API server.
     var useIdentityServer: Bool { true }
@@ -32,12 +40,14 @@ struct IdentityTokenRequest: APIRequest {
     let email: String
     let masterPasswordHash: String
     let deviceIdentifier: String
+    let serverConfig: ServerConfig?
     let twoFactorProvider: TwoFactorProvider?
     let twoFactorToken: String?
 
     var path: String { "/connect/token" }
     var method: HTTPMethod { .post }
     var useIdentityServer: Bool { true }
+    var serverConfigOverride: ServerConfig? { serverConfig }
     var requiresAuth: Bool { false }
 
     // Use URL-form-encoded body — identity server does NOT accept JSON here.
@@ -124,14 +134,17 @@ struct RefreshTokenResponse: Decodable {
 struct GetProfileRequest: APIRequest {
     typealias Response = ProfileResponse
     let accessToken: String?
+    let serverConfig: ServerConfig?
 
-    init(accessToken: String? = nil) {
+    init(accessToken: String? = nil, serverConfig: ServerConfig? = nil) {
         self.accessToken = accessToken
+        self.serverConfig = serverConfig
     }
 
     var path: String { "/accounts/profile" }
     var method: HTTPMethod { .get }
     var authTokenOverride: String? { accessToken }
+    var serverConfigOverride: ServerConfig? { serverConfig }
 }
 
 struct ProfileResponse: Decodable {

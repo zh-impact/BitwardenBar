@@ -151,7 +151,10 @@ struct LoginView: View {
                 }
             }
             do {
-                let preLogin = try await services.apiService.send(PreLoginRequest(email: email))
+                let preLogin = try await services.authService.preLogin(
+                    email: email,
+                    serverConfig: resolvedServerConfig
+                )
                 let kdfConfig = KdfConfig(
                     type: KdfType(rawValue: preLogin.kdf) ?? .pbkdf2Sha256,
                     iterations: preLogin.kdfIterations,
@@ -194,7 +197,10 @@ struct LoginView: View {
                 }
             }
             do {
-                let preLogin = try await services.apiService.send(PreLoginRequest(email: email))
+                let preLogin = try await services.authService.preLogin(
+                    email: email,
+                    serverConfig: resolvedServerConfig
+                )
                 let kdfConfig = KdfConfig(
                     type: KdfType(rawValue: preLogin.kdf) ?? .pbkdf2Sha256,
                     iterations: preLogin.kdfIterations,
@@ -244,6 +250,7 @@ private struct TwoFactorSection: View {
 
                 TextField("Verification code", text: binding.token)
                     .textFieldStyle(.roundedBorder)
+                    .autocorrectionDisabled()
                     .onSubmit(onSubmit)
 
                 Button("Cancel") { state = nil }

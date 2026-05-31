@@ -74,6 +74,7 @@ final class AccountStore {
         accounts = accounts.filter { $0.id != id }
         keychain.deleteToken(for: id)
         keychain.deleteUserKey(for: id)
+        keychain.deleteBiometricUserKey(for: id)
         keychain.deleteEncryptedUserKey(for: id)
         keychain.deletePrivateKey(for: id)
         if activeAccountId == id {

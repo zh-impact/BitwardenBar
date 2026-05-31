@@ -9,6 +9,13 @@ struct VaultKey {
     let encKey: Data  // 32 bytes — used for AES-256-CBC decryption
     let macKey: Data  // 32 bytes — used for HMAC-SHA256 verification
 
+    var combined: Data {
+        var data = Data()
+        data.append(encKey)
+        data.append(macKey)
+        return data
+    }
+
     init(encKey: Data, macKey: Data) {
         self.encKey = encKey
         self.macKey = macKey

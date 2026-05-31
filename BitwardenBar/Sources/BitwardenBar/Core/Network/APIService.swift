@@ -106,7 +106,7 @@ final class APIService {
     }
 
     private func resolveBaseURL<R: APIRequest>(for request: R) throws -> URL {
-        let config = accountStore.activeServerConfig ?? .production
+        let config = request.serverConfigOverride ?? accountStore.activeServerConfig ?? .production
         return request.useIdentityServer ? config.identityURL : config.apiURL
     }
 

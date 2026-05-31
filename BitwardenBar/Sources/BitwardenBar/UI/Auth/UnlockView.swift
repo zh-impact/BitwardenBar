@@ -111,15 +111,15 @@ struct UnlockView: View {
                 try await services.authService.unlockWithBiometrics(account: account)
                 await MainActor.run { appState.refresh() }
             } catch {
-                await MainActor.run { errorMessage = error.localizedDescription }
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                    canUseBiometrics = services.authService.canUnlockWithBiometrics(account: account)
+                }
             }
         }
     }
 
     private func checkBiometrics() {
-        let context = LAContext()
-        var error: NSError?
-        canUseBiometrics = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
-            && services.keychainRepository.userKey(for: account.id) != nil
+        canUseBiometrics = services.authService.canUnlockWithBiometrics(account: account)
     }
 }

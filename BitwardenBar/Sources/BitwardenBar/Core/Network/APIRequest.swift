@@ -15,6 +15,8 @@ protocol APIRequest {
     var additionalHeaders: [String: String] { get }
     /// Optional access token to use for this request instead of the active account token.
     var authTokenOverride: String? { get }
+    /// Optional server config to use for this request instead of the active account config.
+    var serverConfigOverride: ServerConfig? { get }
     var requiresAuth: Bool { get }
     /// Override per-request to hit identity server instead of API server
     var useIdentityServer: Bool { get }
@@ -25,6 +27,7 @@ extension APIRequest {
     var formBody: [String: String]? { nil }
     var additionalHeaders: [String: String] { [:] }
     var authTokenOverride: String? { nil }
+    var serverConfigOverride: ServerConfig? { nil }
     var requiresAuth: Bool { true }
     var useIdentityServer: Bool { false }
 }

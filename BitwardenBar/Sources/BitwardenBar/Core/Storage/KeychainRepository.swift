@@ -1,4 +1,5 @@
 import Foundation
+import LocalAuthentication
 import Security
 
 // MARK: - KeychainRepository
@@ -40,6 +41,76 @@ final class KeychainRepository {
 
     func deleteUserKey(for userId: String) {
         delete(account: userKeyKey(userId))
+    }
+
+    func saveBiometricUserKey(_ key: String, for userId: String) throws {
+        guard let data = key.data(using: .utf8) else { throw KeychainError.encodingFailed }
+
+        var accessControlError: Unmanaged<CFError>?
+        guard let accessControl = SecAccessControlCreateWithFlags(
+            nil,
+            kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+            .biometryCurrentSet,
+            &accessControlError
+        ) else {
+            throw KeychainError.accessControlCreationFailed(error: accessControlError?.takeRetainedValue())
+        }
+
+        let account = biometricUserKeyKey(userId)
+        delete(account: account)
+
+        let query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: account,
+            kSecValueData: data,
+            kSecAttrAccessControl: accessControl,
+            kSecAttrLabel: "Biometric User Key for \(userId)"
+        ]
+
+        let status = SecItemAdd(query as CFDictionary, nil)
+        guard status == errSecSuccess else {
+            throw KeychainError.saveFailed(status: status)
+        }
+    }
+
+    func biometricUserKey(for userId: String, context: LAContext) -> String? {
+        let query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: biometricUserKeyKey(userId),
+            kSecReturnData: true,
+            kSecMatchLimit: kSecMatchLimitOne,
+            kSecUseAuthenticationContext: context
+        ]
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        guard status == errSecSuccess,
+              let data = result as? Data else {
+            return nil
+        }
+        return String(data: data, encoding: .utf8)
+    }
+
+    func hasBiometricUserKey(for userId: String) -> Bool {
+        let context = LAContext()
+        context.interactionNotAllowed = true
+
+        let query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrService: service,
+            kSecAttrAccount: biometricUserKeyKey(userId),
+            kSecReturnData: true,
+            kSecMatchLimit: kSecMatchLimitOne,
+            kSecUseAuthenticationContext: context
+        ]
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        return status == errSecSuccess || status == errSecInteractionNotAllowed
+    }
+
+    func deleteBiometricUserKey(for userId: String) {
+        delete(account: biometricUserKeyKey(userId))
     }
 
     // MARK: - Encrypted Login Key Material
@@ -91,6 +162,7 @@ final class KeychainRepository {
 
     private func tokenKey(_ userId: String) -> String { "token_\(userId)" }
     private func userKeyKey(_ userId: String) -> String { "userKey_\(userId)" }
+    private func biometricUserKeyKey(_ userId: String) -> String { "biometricUserKey_\(userId)" }
     private func encryptedUserKeyKey(_ userId: String) -> String { "encryptedUserKey_\(userId)" }
     private func privateKeyKey(_ userId: String) -> String { "privateKey_\(userId)" }
 
@@ -102,7 +174,8 @@ final class KeychainRepository {
             kSecAttrService: service,
             kSecAttrAccount: account,
             kSecValueData: data,
-            kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
+            kSecAttrLabel: "Keychain item for \(account)"
         ]
 
         let deleteQuery: [CFString: Any] = [
@@ -147,4 +220,5 @@ final class KeychainRepository {
 enum KeychainError: Error {
     case saveFailed(status: OSStatus)
     case encodingFailed
+    case accessControlCreationFailed(error: CFError?)
 }
