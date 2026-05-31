@@ -4,3 +4,5 @@
 .swiftpm
 .DS_Store
 /BitwardenBar/vendor/sdk-swift
+
+.vscode/settings.json

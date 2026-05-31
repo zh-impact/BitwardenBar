@@ -9,6 +9,7 @@ final class ServiceContainer {
 
     let keychainRepository: KeychainRepository
     let accountStore: AccountStore
+    let hotKeySettings: HotKeySettings
 
     // MARK: - Network
 
@@ -39,6 +40,7 @@ final class ServiceContainer {
         // Storage
         keychainRepository = KeychainRepository()
         accountStore = AccountStore(keychain: keychainRepository)
+        hotKeySettings = HotKeySettings()
 
         // Network — base URL comes from active account's server config
         apiService = APIService(accountStore: accountStore)

@@ -10,10 +10,16 @@ struct SettingsView: View {
     let appState: AppState
 
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("hotkey.keyCode") private var hotKeyCode: Int = Int(kVK_ANSI_B)
-    @AppStorage("hotkey.modifiers") private var hotKeyModifiers: Int = 786432 // cmd+shift
+    @State private var hotKeyShortcut: HotKeyShortcut
     @AppStorage("vault.autoLockMinutes") private var autoLockMinutes: Int = 15
     @AppStorage("vault.clearClipboardSeconds") private var clearClipboardSeconds: Int = 30
+
+    init(account: Account, services: ServiceContainer, appState: AppState) {
+        self.account = account
+        self.services = services
+        self.appState = appState
+        _hotKeyShortcut = State(initialValue: services.hotKeySettings.currentShortcut())
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -61,8 +67,13 @@ struct SettingsView: View {
                         Text("Show/Hide vault")
                         Spacer()
                         HotKeyRecorderView(
-                            keyCode: $hotKeyCode,
-                            modifiers: $hotKeyModifiers
+                            shortcut: Binding(
+                                get: { hotKeyShortcut },
+                                set: { newShortcut in
+                                    hotKeyShortcut = newShortcut
+                                    services.hotKeySettings.save(newShortcut)
+                                }
+                            )
                         )
                     }
                 }
@@ -134,13 +145,12 @@ struct AccountsListView: View {
 
 /// Simple keyboard shortcut display / record button.
 struct HotKeyRecorderView: View {
-    @Binding var keyCode: Int
-    @Binding var modifiers: Int
+    @Binding var shortcut: HotKeyShortcut
     @State private var isRecording = false
 
     var body: some View {
         Button {
-            isRecording = true
+            isRecording.toggle()
         } label: {
             Text(isRecording ? "Press shortcut…" : currentShortcutLabel)
                 .font(.system(.callout, design: .monospaced))
@@ -155,19 +165,19 @@ struct HotKeyRecorderView: View {
         }
         .buttonStyle(.plain)
         .background(
-            KeyEventCapture(isActive: $isRecording, keyCode: $keyCode, modifiers: $modifiers)
+            KeyEventCapture(isActive: $isRecording, shortcut: $shortcut)
         )
     }
 
     private var currentShortcutLabel: String {
         var parts = [String]()
-        let flags = NSEvent.ModifierFlags(rawValue: UInt(modifiers))
+        let flags = shortcut.modifiers
         if flags.contains(.control) { parts.append("⌃") }
         if flags.contains(.option) { parts.append("⌥") }
         if flags.contains(.shift) { parts.append("⇧") }
         if flags.contains(.command) { parts.append("⌘") }
         // Map keyCode to string (simplified)
-        let keyName = keyCodeToString(keyCode) ?? "?"
+        let keyName = keyCodeToString(shortcut.keyCode) ?? "?"
         parts.append(keyName.uppercased())
         return parts.joined()
     }
@@ -188,34 +198,55 @@ struct HotKeyRecorderView: View {
 
 private struct KeyEventCapture: NSViewRepresentable {
     @Binding var isActive: Bool
-    @Binding var keyCode: Int
-    @Binding var modifiers: Int
+    @Binding var shortcut: HotKeyShortcut
 
     func makeNSView(context: Context) -> NSView {
         let view = KeyCaptureNSView()
-        view.onCapture = { code, mods in
-            keyCode = code
-            modifiers = mods
+        view.onCapture = { capturedShortcut in
+            shortcut = capturedShortcut
+            isActive = false
+        }
+        view.onCancel = {
             isActive = false
         }
         return view
     }
 
     func updateNSView(_ view: NSView, context: Context) {
-        (view as? KeyCaptureNSView)?.isCapturing = isActive
+        guard let view = view as? KeyCaptureNSView else { return }
+        view.isCapturing = isActive
+
+        if isActive {
+            DispatchQueue.main.async {
+                view.window?.makeFirstResponder(view)
+            }
+        } else if view.window?.firstResponder === view {
+            view.window?.makeFirstResponder(nil)
+        }
     }
 }
 
 private final class KeyCaptureNSView: NSView {
-    var onCapture: ((Int, Int) -> Void)?
+    var onCapture: ((HotKeyShortcut) -> Void)?
+    var onCancel: (() -> Void)?
     var isCapturing = false
 
     override var acceptsFirstResponder: Bool { true }
 
     override func keyDown(with event: NSEvent) {
         guard isCapturing else { super.keyDown(with: event); return }
+
+        if Int(event.keyCode) == kVK_Escape {
+            onCancel?()
+            return
+        }
+
         let mods = event.modifierFlags.intersection([.command, .shift, .option, .control])
         guard !mods.isEmpty else { return }
-        onCapture?(Int(event.keyCode), Int(mods.rawValue))
+        guard HotKeyShortcut.isValid(keyCode: Int(event.keyCode), modifiers: mods) else {
+            return
+        }
+
+        onCapture?(HotKeyShortcut(keyCode: Int(event.keyCode), modifiers: mods))
     }
 }

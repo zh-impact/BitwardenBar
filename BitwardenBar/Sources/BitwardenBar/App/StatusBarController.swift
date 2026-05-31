@@ -1,6 +1,12 @@
 import AppKit
 import SwiftUI
 import Combine
+import OSLog
+
+private let statusBarLogger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? "BitwardenBar",
+    category: "HotKeyDebug"
+)
 
 /// Manages the NSStatusItem (menu bar icon) and the NSPopover that shows vault UI.
 @MainActor
@@ -66,18 +72,44 @@ final class StatusBarController {
     }
 
     private func setupHotKey() {
-        hotKeyMonitor = HotKeyMonitor()
+        let shortcut = services.hotKeySettings.currentShortcut()
+        statusBarLogger.debug("Setting up hotkey monitor with persisted shortcut keyCode=\(shortcut.keyCode, privacy: .public) modifiers=\(shortcut.modifiersRawValue, privacy: .public)")
+        hotKeyMonitor = HotKeyMonitor(
+            keyCode: UInt16(shortcut.keyCode),
+            modifiers: shortcut.modifiers
+        )
         hotKeyMonitor?.onActivate = { [weak self] in
+            statusBarLogger.notice("Hotkey activation callback received in StatusBarController")
             Task { @MainActor in
                 self?.togglePopover()
             }
         }
         hotKeyMonitor?.start()
+
+        NotificationCenter.default.publisher(
+            for: HotKeySettings.didChangeNotification,
+            object: services.hotKeySettings
+        )
+        .receive(on: RunLoop.main)
+        .sink { [weak self] _ in
+            self?.applyHotKeyShortcut()
+        }
+        .store(in: &cancellables)
+    }
+
+    private func applyHotKeyShortcut() {
+        let shortcut = services.hotKeySettings.currentShortcut()
+        statusBarLogger.debug("Applying updated hotkey keyCode=\(shortcut.keyCode, privacy: .public) modifiers=\(shortcut.modifiersRawValue, privacy: .public)")
+        hotKeyMonitor?.updateHotKey(
+            keyCode: UInt16(shortcut.keyCode),
+            modifiers: shortcut.modifiers
+        )
     }
 
     // MARK: - Popover Control
 
     @objc func togglePopover() {
+        statusBarLogger.notice("togglePopover called. isShown=\(self.popover?.isShown == true, privacy: .public)")
         if popover?.isShown == true {
             closePopover()
         } else {
@@ -87,6 +119,7 @@ final class StatusBarController {
 
     func showPopover() {
         guard let button = statusItem?.button, let popover else { return }
+        statusBarLogger.notice("Showing popover from hotkey or status item")
         // Temporarily switch to .regular so the popover window can become key,
         // which enables standard keyboard shortcuts (Cmd+V, Cmd+A, etc.) in text fields.
         NSApp.setActivationPolicy(.regular)
@@ -94,9 +127,11 @@ final class StatusBarController {
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         // Make the popover window key so text fields receive keyboard events.
         popover.contentViewController?.view.window?.makeKey()
+        statusBarLogger.debug("Popover show request finished. isShown=\(popover.isShown, privacy: .public)")
     }
 
     private func closePopover() {
+        statusBarLogger.notice("Closing popover")
         popover?.performClose(nil)
         // Return to accessory policy so the app hides from Dock and App Switcher.
         NSApp.setActivationPolicy(.accessory)
