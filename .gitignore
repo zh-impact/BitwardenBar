@@ -1,0 +1,6 @@
+/references
+
+.build
+.swiftpm
+.DS_Store
+/BitwardenBar/vendor/sdk-swift
