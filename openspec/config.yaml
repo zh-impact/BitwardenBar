@@ -1,20 +1,84 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Project: BitwardenBar
+  Product: macOS status bar Bitwarden client implemented as a Swift Package Manager executable.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Tech stack:
+  - Swift 5.9
+  - SwiftUI + AppKit (`NSStatusItem`, `NSPopover`) for the menu bar UI
+  - GRDB.swift for local SQLite vault cache
+  - Keychain + UserDefaults for persistence of account/session material
+  - Pure Swift/CommonCrypto/CryptoKit crypto flow; the runtime app does not depend on the Bitwarden SDK
+
+  Repository boundaries:
+  - Change `BitwardenBar/` unless a task explicitly requires otherwise.
+  - Treat `references/clients/` and `references/ios/` as read-only protocol and behavior references.
+  - Use `references/clients/` to confirm HTTP headers, request bodies, response fields, and auth error formats.
+  - Use `references/ios/` to confirm Swift-side naming and response-model expectations when the TypeScript client is too indirect.
+
+  Architecture and ownership:
+  - App shell/menu bar behavior lives under `BitwardenBar/Sources/BitwardenBar/App`.
+  - Auth orchestration lives in `Core/Auth/AuthService.swift`.
+  - HTTP/network decoding lives in `Core/Network`.
+  - Crypto primitives live in `Core/Crypto/BWCrypto.swift`.
+  - Vault sync/decryption lives in `Core/Vault/SyncService.swift`.
+  - Persistence lives in `Core/Storage`.
+  - Login and unlock UI lives in `UI/Auth`; vault UI lives in `UI/Vault`.
+
+  Build and validation:
+  - Build from `BitwardenBar/` with `swift build`.
+  - Run tests from `BitwardenBar/` with `swift test`.
+  - Prefer narrow validation tied to the changed area before broader checks.
+
+  Protocol invariants already verified:
+  - Prelogin uses the identity server, not the API server.
+  - `/connect/token` must be `application/x-www-form-urlencoded`, not JSON.
+  - Token requests must include `Auth-Email` as base64 without `=` padding.
+  - Token requests must send `Device-Type: 7` as an HTTP header.
+  - Token requests should send `Accept: application/json`.
+  - `Bitwarden-Client-Name` and `Bitwarden-Client-Version` should not be attached to the token endpoint request itself.
+  - Other authenticated app/API requests should send `Device-Type: 7`, `Bitwarden-Client-Name: desktop`, and the current desktop version.
+  - Token and profile payloads use mixed response casing: snake_case OAuth fields and PascalCase crypto/account fields.
+  - Two-factor-required auth responses come back as HTTP 400 with `TwoFactorProviders2`.
+
+  Product constraints and best practices:
+  - Keep fixes minimal, protocol-accurate, and focused on the owning abstraction.
+  - Record user-visible or contract-level behavior in specs; keep line-by-line implementation detail in design or code.
+  - Prefer capability names that describe stable product behavior, not temporary internal rewrites.
+  - Password login flow is: prelogin -> token -> profile -> unlock vault -> initial sync.
+  - `GetProfileRequest` may need an explicit access-token override during login before active account state exists.
+  - Password unlock depends on encrypted `Key` and `PrivateKey` captured at login and stored in Keychain.
+  - If unlock fails due to missing or stale encrypted key material, a fresh authenticated profile fetch is the preferred recovery path before requiring a full login.
+  - PBKDF2-SHA256 is supported; Argon2id is currently not supported and must not be spec'd as working unless implementation changes.
+  - UI-facing state changes for login, unlock, and sync must remain main-actor safe.
+  - In lazy SwiftUI lists, detail presentation state should be owned above transient row views.
+
+  OpenSpec guidance for this repo:
+  - This repo currently uses OpenSpec mainly to document validated behavior and future changes around auth, sync, crypto, and macOS UI stability.
+  - Prefer a small number of well-scoped capabilities over one broad "app behavior" capability.
+  - If a change only captures current behavior, write it as a retrospective documentation baseline and say so explicitly in the proposal/design.
+
+rules:
+  proposal:
+    - >
+      State why the change matters now in repository terms: protocol correctness, unlock reliability, vault behavior, or macOS UI stability.
+    - Keep the document concise and emphasize behavior or contract changes, not implementation walkthroughs.
+    - Include explicit capability names in kebab-case and avoid vague buckets like `misc-fixes` or `cleanup`.
+    - Call out impacted subsystems such as auth, network, crypto, storage, sync, or UI.
+  design:
+    - Create `design.md` for cross-cutting, security-sensitive, protocol-sensitive, migration-sensitive, or concurrency-sensitive work.
+    - Explain why the chosen protocol/architecture decision is correct and mention rejected alternatives when they are relevant.
+    - Document constraints coming from Bitwarden protocol compatibility, Keychain persistence, crypto support limits, and macOS UI lifecycle.
+    - Keep design focused on decisions and trade-offs rather than file-by-file implementation notes.
+  specs:
+    - Specs define externally meaningful or user-visible behavior; do not use specs to record purely local refactors.
+    - Each requirement must be testable, use SHALL or MUST language, and include at least one `#### Scenario`.
+    - New capabilities should usually map to stable areas such as desktop auth/session, vault interaction, sync behavior, or shell behavior.
+    - Preserve already verified protocol rules unless the change intentionally updates them.
+    - If a behavior depends on known limitations, state the limitation explicitly instead of implying unsupported behavior works.
+  tasks:
+    - Use numbered task groups and `- [ ]` checkboxes exactly.
+    - Break work into verifiable slices that can be completed in one session.
+    - Include validation tasks for changed behavior when executable checks exist.
+    - Add follow-up documentation or migration tasks when a change intentionally leaves rough edges behind.
