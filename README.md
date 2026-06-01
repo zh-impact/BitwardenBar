@@ -100,3 +100,14 @@ Unit tests live in `BitwardenBar/Tests/BitwardenBarTests/` and currently cover c
 2. Use `swift build` or `swift test` from `BitwardenBar/` for quick validation.
 3. Cross-check protocol-sensitive changes against `references/clients/` and `references/ios/` before changing auth or crypto behavior.
 4. Update or consult `openspec/` when a change affects documented capabilities or active work items.
+
+## Acknowledgements
+
+BitwardenBar references and draws inspiration from the following official Bitwarden open source projects:
+
+- [bitwarden/ios](https://github.com/bitwarden/ios) — official Bitwarden iOS client, used as reference for Swift-side modeling and behavior.
+- [bitwarden/clients](https://github.com/bitwarden/clients) — official Bitwarden TypeScript clients, used for request, response, and protocol verification.
+
+## License
+
+This project is licensed under the [GNU General Public License v3.0](LICENSE).
