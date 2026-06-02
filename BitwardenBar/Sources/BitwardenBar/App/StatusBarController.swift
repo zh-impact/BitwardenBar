@@ -18,6 +18,7 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     private var popover: NSPopover?
     private var eventMonitor: Any?
     private var hotKeyMonitor: HotKeyMonitor?
+    private var windowCoordinator: WindowCoordinator?
     private let services: ServiceContainer
     private var cancellables = Set<AnyCancellable>()
 
@@ -33,6 +34,8 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
     func setup() {
         setupStatusItem()
         setupPopover()
+        setupWindowCoordinator()
+        setupStateObservation()
         setupHotKey()
     }
 
@@ -62,7 +65,9 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         popover.animates = true
         popover.delegate = self
 
-        let rootView = RootView(services: services)
+        let rootView = RootView(services: services) { [weak self] account in
+            self?.windowCoordinator?.showSettingsWindow(account: account)
+        }
         popover.contentViewController = NSHostingController(rootView: rootView)
 
         self.popover = popover
@@ -80,6 +85,27 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
                 self?.closePopover()
             }
         }
+    }
+
+    private func setupWindowCoordinator() {
+        windowCoordinator = WindowCoordinator(
+            services: services,
+            closePopover: { [weak self] in
+                self?.closePopover()
+            },
+            reopenPopover: { [weak self] in
+                self?.showPopover()
+            }
+        )
+    }
+
+    private func setupStateObservation() {
+        services.appState.$lockState
+            .receive(on: RunLoop.main)
+            .sink { [weak self] lockState in
+                self?.handleLockStateChange(lockState)
+            }
+            .store(in: &cancellables)
     }
 
     private func setupHotKey() {
@@ -130,6 +156,25 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
 
     func showPopover() {
         guard let button = statusItem?.button, let popover else { return }
+
+        if windowCoordinator?.focusOpenWindowIfNeeded() == true {
+            return
+        }
+
+        switch services.appState.lockState {
+        case .noAccount:
+            windowCoordinator?.showLoginWindow()
+            return
+
+        case .locked:
+            guard let account = services.appState.activeAccount else { return }
+            windowCoordinator?.showUnlockWindow(account: account)
+            return
+
+        case .unlocked:
+            break
+        }
+
         statusBarLogger.notice("Showing popover from hotkey or status item")
         updatePopoverSize()
         // Temporarily switch to .regular so the popover window can become key,
@@ -152,6 +197,18 @@ final class StatusBarController: NSObject, NSPopoverDelegate {
         popover?.contentSize = size
         popover?.contentViewController?.preferredContentSize = size
         popover?.contentViewController?.view.window?.setContentSize(size)
+    }
+
+    private func handleLockStateChange(_ lockState: AppState.LockState) {
+        switch lockState {
+        case .unlocked:
+            updatePopoverSize()
+
+        case .locked, .noAccount:
+            if popover?.isShown == true {
+                closePopover()
+            }
+        }
     }
 
     func popoverDidShow(_ notification: Notification) {

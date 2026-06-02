@@ -8,16 +8,23 @@ struct SettingsView: View {
     let account: Account
     let services: ServiceContainer
     let appState: AppState
+    let onCloseRequest: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @State private var hotKeyShortcut: HotKeyShortcut
     @AppStorage("vault.autoLockMinutes") private var autoLockMinutes: Int = 15
     @AppStorage("vault.clearClipboardSeconds") private var clearClipboardSeconds: Int = 30
 
-    init(account: Account, services: ServiceContainer, appState: AppState) {
+    init(
+        account: Account,
+        services: ServiceContainer,
+        appState: AppState,
+        onCloseRequest: (() -> Void)? = nil
+    ) {
         self.account = account
         self.services = services
         self.appState = appState
+        self.onCloseRequest = onCloseRequest
         _hotKeyShortcut = State(initialValue: services.hotKeySettings.currentShortcut())
     }
 
@@ -27,7 +34,13 @@ struct SettingsView: View {
                 Text("Settings")
                     .font(.headline)
                 Spacer()
-                Button { dismiss() } label: {
+                Button {
+                    if let onCloseRequest {
+                        onCloseRequest()
+                    } else {
+                        dismiss()
+                    }
+                } label: {
                     Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)

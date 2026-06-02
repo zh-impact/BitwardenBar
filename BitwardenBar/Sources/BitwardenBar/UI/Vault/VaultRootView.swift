@@ -8,14 +8,15 @@ struct VaultRootView: View {
     let account: Account
     let services: ServiceContainer
     let appState: AppState
+    let onOpenSettings: () -> Void
 
     @StateObject private var viewModel: VaultViewModel
-    @State private var showSettings = false
 
-    init(account: Account, services: ServiceContainer, appState: AppState) {
+    init(account: Account, services: ServiceContainer, appState: AppState, onOpenSettings: @escaping () -> Void) {
         self.account = account
         self.services = services
         self.appState = appState
+        self.onOpenSettings = onOpenSettings
         _viewModel = StateObject(wrappedValue: VaultViewModel(
             account: account,
             cipherService: services.cipherService,
@@ -50,7 +51,7 @@ struct VaultRootView: View {
                 }
 
                 Button {
-                    showSettings = true
+                    onOpenSettings()
                 } label: {
                     Image(systemName: "gearshape")
                 }
@@ -113,18 +114,6 @@ struct VaultRootView: View {
             .padding(.vertical, 6)
         }
         .onAppear { viewModel.load() }
-        .onReceive(services.popoverState.$isPresented) { isPresented in
-            if !isPresented {
-                showSettings = false
-            }
-        }
-        .sheet(isPresented: $showSettings) {
-            SettingsView(
-                account: account,
-                services: services,
-                appState: appState
-            )
-        }
         .alert("Sync Error", isPresented: $viewModel.showSyncError) {
             Button("OK", role: .cancel) {}
         } message: {

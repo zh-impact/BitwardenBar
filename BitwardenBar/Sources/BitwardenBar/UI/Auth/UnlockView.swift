@@ -8,6 +8,8 @@ struct UnlockView: View {
     let account: Account
     let services: ServiceContainer
     let appState: AppState
+    let onUnlocked: (() -> Void)?
+    let onCancel: (() -> Void)?
 
     @State private var password = ""
     @State private var isLoading = false
@@ -67,6 +69,12 @@ struct UnlockView: View {
                         }
                         .buttonStyle(.bordered)
                     }
+
+                    if let onCancel {
+                        Button("Cancel", action: onCancel)
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Divider()
@@ -82,6 +90,7 @@ struct UnlockView: View {
             }
             .padding()
         }
+        .frame(minWidth: 480, idealWidth: 520)
         .onAppear { checkBiometrics() }
     }
 
@@ -98,7 +107,10 @@ struct UnlockView: View {
             }
             do {
                 try await services.authService.unlock(password: password, account: account)
-                await MainActor.run { appState.refresh() }
+                await MainActor.run {
+                    appState.refresh()
+                    onUnlocked?()
+                }
             } catch {
                 await MainActor.run { errorMessage = error.localizedDescription }
             }
@@ -109,7 +121,10 @@ struct UnlockView: View {
         Task {
             do {
                 try await services.authService.unlockWithBiometrics(account: account)
-                await MainActor.run { appState.refresh() }
+                await MainActor.run {
+                    appState.refresh()
+                    onUnlocked?()
+                }
             } catch {
                 await MainActor.run {
                     errorMessage = error.localizedDescription

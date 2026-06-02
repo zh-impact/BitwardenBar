@@ -6,6 +6,8 @@ struct LoginView: View {
 
     let services: ServiceContainer
     let appState: AppState
+    let onAuthenticated: (() -> Void)?
+    let onCancel: (() -> Void)?
 
     @State private var email = ""
     @State private var password = ""
@@ -101,10 +103,17 @@ struct LoginView: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(isLoading || !canSubmit)
                     .keyboardShortcut(.return, modifiers: [])
+
+                    if let onCancel {
+                        Button("Cancel", action: onCancel)
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .padding()
             }
         }
+        .frame(minWidth: 480, idealWidth: 520, minHeight: 360, idealHeight: 420)
     }
 
     private var canSubmit: Bool {
@@ -171,6 +180,7 @@ struct LoginView: View {
                 )
                 await MainActor.run {
                     appState.didLogin(account: account)
+                    onAuthenticated?()
                     // Trigger initial sync
                     Task { try? await services.syncService.sync(userId: account.id) }
                 }
@@ -219,6 +229,7 @@ struct LoginView: View {
                 )
                 await MainActor.run {
                     appState.didLogin(account: account)
+                    onAuthenticated?()
                     Task { try? await services.syncService.sync(userId: account.id) }
                 }
             } catch {
