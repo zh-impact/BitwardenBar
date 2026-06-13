@@ -60,6 +60,13 @@ final class VaultStore {
         }
     }
 
+    func saveCipher(_ cipher: Cipher) throws {
+        let pool = try pool(for: cipher.userId)
+        try pool.write { db in
+            try CipherRecord(cipher: cipher).save(db)
+        }
+    }
+
     // MARK: - Folders
 
     func saveFolders(_ folders: [Folder], userId: String) throws {

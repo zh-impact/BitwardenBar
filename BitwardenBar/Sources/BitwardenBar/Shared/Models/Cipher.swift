@@ -45,6 +45,28 @@ struct Cipher: Identifiable, Codable, Equatable {
         case .secureNote: return nil
         }
     }
+
+    func withDeletedDate(_ deletedDate: Date?) -> Cipher {
+        Cipher(
+            id: id,
+            userId: userId,
+            organizationId: organizationId,
+            folderId: folderId,
+            type: type,
+            name: name,
+            notes: notes,
+            favorite: favorite,
+            deletedDate: deletedDate,
+            creationDate: creationDate,
+            revisionDate: revisionDate,
+            login: login,
+            card: card,
+            identity: identity,
+            secureNote: secureNote,
+            fields: fields,
+            passwordHistory: passwordHistory
+        )
+    }
 }
 
 // MARK: - CipherLogin

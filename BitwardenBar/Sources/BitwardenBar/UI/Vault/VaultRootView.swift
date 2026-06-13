@@ -78,7 +78,10 @@ struct VaultRootView: View {
             } else {
                 CipherListView(
                     ciphers: viewModel.visibleCiphers,
-                    totpService: services.totpService
+                    totpService: services.totpService,
+                    onDelete: { cipher in
+                        viewModel.delete(cipher: cipher)
+                    }
                 )
             }
 
@@ -119,6 +122,11 @@ struct VaultRootView: View {
         } message: {
             Text(viewModel.syncErrorMessage ?? "Unknown error")
         }
+        .alert("Delete Error", isPresented: $viewModel.showDeleteError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.deleteErrorMessage ?? "Unknown error")
+        }
     }
 }
 
@@ -135,6 +143,8 @@ final class VaultViewModel: ObservableObject {
     @Published private(set) var isSyncing = false
     @Published var showSyncError = false
     @Published var syncErrorMessage: String?
+    @Published var showDeleteError = false
+    @Published var deleteErrorMessage: String?
 
     private let account: Account
     private let cipherService: CipherService
@@ -174,6 +184,19 @@ final class VaultViewModel: ObservableObject {
             } catch {
                 syncErrorMessage = error.localizedDescription
                 showSyncError = true
+            }
+        }
+    }
+
+    func delete(cipher: Cipher) {
+        Task {
+            do {
+                try await cipherService.softDelete(cipher: cipher)
+                allCiphers = (try? cipherService.fetchAll(userId: account.id)) ?? []
+                filterCiphers()
+            } catch {
+                deleteErrorMessage = error.localizedDescription
+                showDeleteError = true
             }
         }
     }

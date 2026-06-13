@@ -7,6 +7,7 @@ struct CipherListView: View {
 
     let ciphers: [Cipher]
     let totpService: TOTPService
+    let onDelete: (Cipher) -> Void
 
     @State private var selectedCipher: Cipher?
 
@@ -17,6 +18,7 @@ struct CipherListView: View {
                     CipherRowView(
                         cipher: cipher,
                         totpService: totpService,
+                        onDelete: { onDelete(cipher) },
                         onSelect: { selectedCipher = cipher }
                     )
                     if cipher.id != ciphers.last?.id {
@@ -38,9 +40,14 @@ struct CipherRowView: View {
 
     let cipher: Cipher
     let totpService: TOTPService
+    let onDelete: () -> Void
     let onSelect: () -> Void
 
     @State private var copyFeedback: String?
+
+    private var actionState: CipherRowActionState {
+        CipherRowActionState(cipher: cipher)
+    }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -63,7 +70,40 @@ struct CipherRowView: View {
 
             Spacer()
 
-            // Quick action buttons (visible on hover via contextMenu)
+            HStack(spacing: 8) {
+                if actionState.canLaunch {
+                    Button {
+                        launchCipher()
+                    } label: {
+                        Image(systemName: "arrow.up.forward.square")
+                    }
+                    .buttonStyle(.plain)
+                    .help("Launch")
+                }
+
+                if actionState.hasCopyActions {
+                    Menu {
+                        copyMenuItems
+                    } label: {
+                        Image(systemName: "doc.on.doc")
+                    }
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .help("Copy")
+                }
+
+                if actionState.hasMoreActions {
+                    Menu {
+                        moreActionsMenuItems
+                    } label: {
+                        Image(systemName: "ellipsis")
+                    }
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .help("More actions")
+                }
+            }
+
             if let feedback = copyFeedback {
                 Text(feedback)
                     .font(.caption2)
@@ -75,12 +115,11 @@ struct CipherRowView: View {
         .padding(.vertical, 7)
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
-        .contextMenu { contextMenuItems }
     }
 
     @ViewBuilder
-    private var contextMenuItems: some View {
-        if let username = cipher.login?.username, !username.isEmpty {
+    private var copyMenuItems: some View {
+        if let username = actionState.copyUsername {
             Button {
                 copyToClipboard(username, feedback: "Username copied")
             } label: {
@@ -88,13 +127,51 @@ struct CipherRowView: View {
             }
         }
 
-        if let password = cipher.login?.password, !password.isEmpty {
+        if let password = actionState.copyPassword {
             Button {
                 copyToClipboard(password, feedback: "Password copied")
             } label: {
                 Label("Copy Password", systemImage: "key")
             }
         }
+    }
+
+    @ViewBuilder
+    private var moreActionsMenuItems: some View {
+        if actionState.canLaunch {
+            Button {
+                launchCipher()
+            } label: {
+                Label("Launch", systemImage: "arrow.up.forward.square")
+            }
+        }
+
+        if let username = actionState.copyUsername {
+            Button {
+                copyToClipboard(username, feedback: "Username copied")
+            } label: {
+                Label("Copy Username", systemImage: "person")
+            }
+        }
+
+        if let password = actionState.copyPassword {
+            Button {
+                copyToClipboard(password, feedback: "Password copied")
+            } label: {
+                Label("Copy Password", systemImage: "key")
+            }
+        }
+
+        Button(role: .destructive) {
+            onDelete()
+        } label: {
+            Label("Delete", systemImage: "trash")
+        }
+    }
+
+    @ViewBuilder
+    private var contextMenuItems: some View {
+        copyMenuItems
 
         if let totp = cipher.login?.totp, !totp.isEmpty,
            let code = totpService.generateCode(from: totp) {
@@ -105,15 +182,22 @@ struct CipherRowView: View {
             }
         }
 
-        if cipher.type == .card {
-            if let number = cipher.card?.number, !number.isEmpty {
-                Button {
-                    copyToClipboard(number, feedback: "Card number copied")
-                } label: {
-                    Label("Copy Card Number", systemImage: "creditcard")
-                }
+        if cipher.type == .card,
+           let number = cipher.card?.number, !number.isEmpty {
+            Button {
+                copyToClipboard(number, feedback: "Card number copied")
+            } label: {
+                Label("Copy Card Number", systemImage: "creditcard")
             }
         }
+
+        Divider()
+        moreActionsMenuItems
+    }
+
+    private func launchCipher() {
+        guard let launchURL = actionState.launchURL else { return }
+        NSWorkspace.shared.open(launchURL)
     }
 
     private func copyToClipboard(_ string: String, feedback: String) {
@@ -126,6 +210,80 @@ struct CipherRowView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             withAnimation { copyFeedback = nil }
         }
+    }
+}
+
+// MARK: - CipherRowActionState
+
+struct CipherRowActionState {
+    let cipher: Cipher
+
+    var copyUsername: String? {
+        nonEmpty(cipher.login?.username)
+    }
+
+    var copyPassword: String? {
+        nonEmpty(cipher.login?.password)
+    }
+
+    var hasCopyActions: Bool {
+        copyUsername != nil || copyPassword != nil
+    }
+
+    var launchURL: URL? {
+        guard cipher.type == .login else { return nil }
+
+        for uri in cipher.login?.uris ?? [] {
+            guard uri.match != .regularExpression,
+                  let rawValue = nonEmpty(uri.uri),
+                  let normalized = normalizeLaunchURL(from: rawValue) else {
+                continue
+            }
+            return normalized
+        }
+
+        return nil
+    }
+
+    var canLaunch: Bool {
+        launchURL != nil
+    }
+
+    var hasMoreActions: Bool {
+        true
+    }
+
+    // This change keeps launch stateless; BitwardenBar does not yet persist last-launched metadata.
+    private func normalizeLaunchURL(from value: String) -> URL? {
+        if value.contains("://") {
+            guard let url = URL(string: value),
+                  let scheme = url.scheme?.lowercased(),
+                  ["http", "https"].contains(scheme) else {
+                return nil
+            }
+            return url
+        }
+
+        guard looksLikeWebsite(value),
+              let url = URL(string: "http://\(value)") else {
+            return nil
+        }
+
+        return url
+    }
+
+    private func looksLikeWebsite(_ value: String) -> Bool {
+        guard !value.contains(" "), value.contains(".") else { return false }
+        let candidate = value.split(separator: "/", maxSplits: 1, omittingEmptySubsequences: true).first ?? ""
+        return candidate.contains(".")
+    }
+
+    private func nonEmpty(_ value: String?) -> String? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
     }
 }
 

@@ -49,4 +49,12 @@ final class CipherService {
         let all = try fetchAll(userId: userId)
         return Dictionary(grouping: all, by: \.type)
     }
+
+    // MARK: - Mutations
+
+    func softDelete(cipher: Cipher) async throws {
+        _ = cryptoService
+        let _: EmptyResponse = try await apiService.send(SoftDeleteCipherRequest(cipherId: cipher.id))
+        try vaultStore.saveCipher(cipher.withDeletedDate(Date()))
+    }
 }

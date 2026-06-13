@@ -14,6 +14,15 @@ struct SyncResponse: Decodable {
     let ciphers: [CipherResponse]
 }
 
+struct SoftDeleteCipherRequest: APIRequest {
+    typealias Response = EmptyResponse
+
+    let cipherId: String
+
+    var path: String { "/ciphers/\(cipherId)/delete" }
+    var method: HTTPMethod { .put }
+}
+
 // MARK: - Cipher Response Model (encrypted — decrypted later by CryptoService)
 
 struct CipherResponse: Decodable, Identifiable {
