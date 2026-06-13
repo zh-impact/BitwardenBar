@@ -312,6 +312,7 @@ struct CipherIcon: View {
         case .secureNote: return "note.text"
         case .card: return "creditcard.fill"
         case .identity: return "person.fill"
+        case .sshKey: return "key.radiowaves.forward"
         }
     }
 
@@ -321,6 +322,7 @@ struct CipherIcon: View {
         case .secureNote: return .yellow
         case .card: return .purple
         case .identity: return .green
+        case .sshKey: return .orange
         }
     }
 }

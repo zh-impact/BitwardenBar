@@ -1,4 +1,53 @@
 import SwiftUI
+import AppKit
+import UniformTypeIdentifiers
+
+enum VaultItemTab: String, CaseIterable, Identifiable {
+    case login
+    case note
+    case card
+    case identity
+    case sshKey
+    case favorites
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .login: return "Login"
+        case .note: return "Note"
+        case .card: return "Card"
+        case .identity: return "Identity"
+        case .sshKey: return "SSH Key"
+        case .favorites: return "Favorites"
+        }
+    }
+
+    func includes(_ cipher: Cipher) -> Bool {
+        switch self {
+        case .login: return cipher.type == .login
+        case .note: return cipher.type == .secureNote
+        case .card: return cipher.type == .card
+        case .identity: return cipher.type == .identity
+        case .sshKey: return cipher.type == .sshKey
+        case .favorites: return cipher.favorite
+        }
+    }
+}
+
+extension Array where Element == VaultItemTab {
+    mutating func moveTab(_ tab: VaultItemTab, before destination: VaultItemTab) {
+        guard tab != destination,
+              let sourceIndex = firstIndex(of: tab),
+              let destinationIndex = firstIndex(of: destination) else {
+            return
+        }
+
+        remove(at: sourceIndex)
+        let adjustedDestination = sourceIndex < destinationIndex ? destinationIndex - 1 : destinationIndex
+        insert(tab, at: adjustedDestination)
+    }
+}
 
 // MARK: - VaultRootView
 
@@ -66,6 +115,13 @@ struct VaultRootView: View {
                 .padding(.horizontal, 8)
                 .padding(.bottom, 4)
 
+            VaultTypeTabsView(
+                selectedTab: $viewModel.selectedTab,
+                tabs: viewModel.orderedTabs,
+                onMove: viewModel.moveTab
+            )
+                .padding(.bottom, 6)
+
             Divider()
 
             // Content
@@ -74,7 +130,7 @@ struct VaultRootView: View {
                 ProgressView("Loading vault…")
                 Spacer()
             } else if viewModel.visibleCiphers.isEmpty {
-                EmptyStateView(query: viewModel.searchQuery)
+                EmptyStateView(query: viewModel.searchQuery, selectedTab: viewModel.selectedTab)
             } else {
                 CipherListView(
                     ciphers: viewModel.visibleCiphers,
@@ -138,6 +194,10 @@ final class VaultViewModel: ObservableObject {
     @Published var searchQuery = "" {
         didSet { filterCiphers() }
     }
+    @Published var selectedTab: VaultItemTab = .login {
+        didSet { filterCiphers() }
+    }
+    @Published private(set) var orderedTabs = VaultItemTab.allCases
     @Published private(set) var visibleCiphers: [Cipher] = []
     @Published private(set) var isLoading = false
     @Published private(set) var isSyncing = false
@@ -201,13 +261,119 @@ final class VaultViewModel: ObservableObject {
         }
     }
 
+    func moveTab(_ tab: VaultItemTab, before destination: VaultItemTab) {
+        orderedTabs.moveTab(tab, before: destination)
+    }
+
     private func filterCiphers() {
-        let query = searchQuery.trimmingCharacters(in: .whitespaces)
-        if query.isEmpty {
-            visibleCiphers = allCiphers.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        } else {
-            visibleCiphers = (try? cipherService.search(query: query, userId: account.id)) ?? []
+        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        visibleCiphers = allCiphers
+            .filter { selectedTab.includes($0) }
+            .filter { query.isEmpty || $0.matchesVaultQuery(query) }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+}
+
+// MARK: - VaultTypeTabsView
+
+private struct VaultTypeTabsView: View {
+    @Binding var selectedTab: VaultItemTab
+    let tabs: [VaultItemTab]
+    let onMove: (VaultItemTab, VaultItemTab) -> Void
+
+    @StateObject private var commandMonitor = CommandKeyMonitor()
+    @State private var draggedTab: VaultItemTab?
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(tabs) { tab in
+                    tabButton(for: tab)
+                }
+            }
+            .padding(.horizontal, 8)
         }
+        .help(commandMonitor.isCommandPressed ? "Drag tabs to reorder" : "Hold Command and drag tabs to reorder")
+    }
+
+    @ViewBuilder
+    private func tabButton(for tab: VaultItemTab) -> some View {
+        let button = Button {
+            selectedTab = tab
+        } label: {
+            Text(tab.title)
+                .font(.caption)
+                .fontWeight(selectedTab == tab ? .semibold : .regular)
+                .foregroundStyle(selectedTab == tab ? Color.white : Color.secondary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(selectedTab == tab ? Color.accentColor : Color(.textBackgroundColor).opacity(0.7))
+                .clipShape(Capsule())
+                .overlay {
+                    Capsule()
+                        .strokeBorder(commandMonitor.isCommandPressed ? Color.accentColor.opacity(0.25) : Color.clear, lineWidth: 1)
+                }
+                .opacity(commandMonitor.isCommandPressed && draggedTab == tab ? 0.65 : 1)
+        }
+        .buttonStyle(.plain)
+
+        if commandMonitor.isCommandPressed {
+            button
+                .onDrag {
+                    draggedTab = tab
+                    return NSItemProvider(object: tab.rawValue as NSString)
+                }
+                .onDrop(
+                    of: [UTType.plainText.identifier],
+                    delegate: VaultTabDropDelegate(
+                        destinationTab: tab,
+                        draggedTab: $draggedTab,
+                        onMove: onMove
+                    )
+                )
+        } else {
+            button
+        }
+    }
+}
+
+private final class CommandKeyMonitor: ObservableObject {
+    @Published private(set) var isCommandPressed = NSEvent.modifierFlags.contains(.command)
+
+    private var monitor: Any?
+
+    init() {
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.flagsChanged]) { [weak self] event in
+            self?.isCommandPressed = event.modifierFlags.contains(.command)
+            return event
+        }
+    }
+
+    deinit {
+        if let monitor {
+            NSEvent.removeMonitor(monitor)
+        }
+    }
+}
+
+private struct VaultTabDropDelegate: DropDelegate {
+    let destinationTab: VaultItemTab
+    @Binding var draggedTab: VaultItemTab?
+    let onMove: (VaultItemTab, VaultItemTab) -> Void
+
+    func dropEntered(info: DropInfo) {
+        guard let draggedTab, draggedTab != destinationTab else { return }
+        onMove(draggedTab, destinationTab)
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggedTab = nil
+        return true
     }
 }
 
@@ -241,6 +407,7 @@ private struct SearchBar: View {
 
 private struct EmptyStateView: View {
     let query: String
+    let selectedTab: VaultItemTab
 
     var body: some View {
         VStack(spacing: 8) {
@@ -248,11 +415,32 @@ private struct EmptyStateView: View {
             Image(systemName: query.isEmpty ? "lock.shield" : "magnifyingglass")
                 .font(.largeTitle)
                 .foregroundStyle(.tertiary)
-            Text(query.isEmpty ? "Your vault is empty" : "No results for \"\(query)\"")
+            Text(emptyMessage)
                 .font(.callout)
                 .foregroundStyle(.secondary)
             Spacer()
         }
         .frame(minHeight: 200)
+    }
+
+    private var emptyMessage: String {
+        if query.isEmpty {
+            return "No \(selectedTab.title) items"
+        }
+
+        return "No \(selectedTab.title) results for \"\(query)\""
+    }
+}
+
+extension Cipher {
+    func matchesVaultQuery(_ query: String) -> Bool {
+        let normalizedQuery = query.lowercased()
+
+        return name.lowercased().contains(normalizedQuery)
+            || login?.username?.lowercased().contains(normalizedQuery) == true
+            || login?.uris?.contains(where: { $0.uri?.lowercased().contains(normalizedQuery) == true }) == true
+            || card?.cardholderName?.lowercased().contains(normalizedQuery) == true
+            || identity?.fullName?.lowercased().contains(normalizedQuery) == true
+            || notes?.lowercased().contains(normalizedQuery) == true
     }
 }

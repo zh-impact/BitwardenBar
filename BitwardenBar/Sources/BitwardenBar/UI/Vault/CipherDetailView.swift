@@ -40,6 +40,7 @@ struct CipherDetailView: View {
                     case .card: cardFields
                     case .identity: identityFields
                     case .secureNote: secureNoteFields
+                    case .sshKey: sshKeyFields
                     }
 
                     if let notes = cipher.notes, !notes.isEmpty {
@@ -116,6 +117,13 @@ struct CipherDetailView: View {
 
     @ViewBuilder
     private var secureNoteFields: some View {
+        EmptyView()
+    }
+
+    // MARK: - SSH Key
+
+    @ViewBuilder
+    private var sshKeyFields: some View {
         EmptyView()
     }
 
@@ -296,6 +304,7 @@ extension CipherType {
         case .secureNote: return "Secure Note"
         case .card: return "Card"
         case .identity: return "Identity"
+        case .sshKey: return "SSH Key"
         }
     }
 }

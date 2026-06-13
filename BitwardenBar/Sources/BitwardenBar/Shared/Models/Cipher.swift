@@ -7,6 +7,7 @@ enum CipherType: Int, Codable, Equatable, CaseIterable {
     case secureNote = 2
     case card = 3
     case identity = 4
+    case sshKey = 5
 }
 
 // MARK: - Cipher
@@ -43,6 +44,7 @@ struct Cipher: Identifiable, Codable, Equatable {
         case .card: return card?.maskedNumber
         case .identity: return identity?.fullName
         case .secureNote: return nil
+        case .sshKey: return nil
         }
     }
 
